@@ -1,0 +1,22 @@
+opam-version: "2.0"
+name: "mlir-sem"
+version: "dev"
+synopsis: "Denotational Semantics for MLIR in Rocq"
+maintainer: "user"
+build: [ "dune" "build" "-p" name "-j" jobs ]
+install: [ "dune" "install" "-p" name ]
+depends: [
+  "ocaml" {>= "4.14.0"}
+  "dune" {>= "3.14"}
+  "rocq-core" {>= "9.0.0" & < "9.1~"}
+  "rocq-stdlib" {>= "9.0.0" & < "9.1~"}
+  "coq-ext-lib" {>= "0.13.0"}
+  "coq-itree" {>= "5.2.0"}
+  "coq-paco"  {>= "4.2.3" & < "4.3~"}
+]
+tags: [
+  "category:Computer Science/Programming Languages/Formal Definitions and Theory"
+  "keyword:semantics"
+  "keyword:MLIR"
+  "logpath:MlirSem"
+]

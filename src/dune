@@ -1,0 +1,6 @@
+(coq.theory
+ (name MlirSem)
+ (package mlir-sem)
+ (modules Main)
+ (theories Stdlib Paco ITree ExtLib)
+)
