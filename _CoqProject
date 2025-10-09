@@ -1,0 +1,14 @@
+-R src MlirSem
+
+-arg -w -arg -masking-absolute-name
+-arg -w -arg -deprecated-hint-without-locality
+-arg -w -arg -deprecated-hint-rewrite-without-locality
+-arg -w -arg -require-in-module
+
+
+./src/Syntax/AST.v
+./src/Semantics/Events.v
+./src/Semantics/Values.v
+./src/Semantics/Denotation.v
+./src/Semantics/Interpreter.v
+./src/Theory/Correctness.v
