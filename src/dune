@@ -1,8 +1,11 @@
 (include_subdirs qualified)
 
+(library
+ (name MlirSem)
+ (package mlir-sem))
+
 (coq.theory
  (name MlirSem)
- (package mlir-sem)
  (modules
   Syntax.AST
   Semantics.Values
@@ -12,5 +15,4 @@
   Theory.Correctness
   Main)
  (flags -R src MlirSem)
- (theories Stdlib Paco ITree ExtLib)
-)
+ (theories Stdlib Paco ITree ExtLib))

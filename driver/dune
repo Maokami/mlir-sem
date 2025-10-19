@@ -1,0 +1,10 @@
+(library
+ (name driver)
+ (modules bindings transformer)
+ (libraries ctypes ctypes.foreign mlir_sem_extracted)
+ (wrapped true))
+
+(executable
+ (name run)
+ (modules run)
+ (libraries driver))

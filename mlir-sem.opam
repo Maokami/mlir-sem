@@ -6,7 +6,7 @@ maintainer: "user"
 build: [ "dune" "build" "-p" name "-j" jobs ]
 install: [ "dune" "install" "-p" name ]
 depends: [
-  "ocaml" {>= "4.14.0"}
+  "ocaml" {>= "5.3.0"}
   "dune" {>= "3.14"}
   "rocq-core" {>= "9.0.0" & < "9.1~"}
   "rocq-stdlib" {>= "9.0.0" & < "9.1~"}

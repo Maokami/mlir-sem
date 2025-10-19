@@ -1,1 +1,7 @@
 (data_only_dirs deps)
+
+(env
+ (dev
+  (env-vars
+   (OCAMLRUNPARAM b=1,e=1)
+   (BACKTRACE 1))))

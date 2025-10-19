@@ -1,0 +1,36 @@
+(test
+ (name test_driver)
+ (libraries driver alcotest mlir_sem_extracted)
+ (deps
+  (file simple_arith.mlir))
+ (action
+  (setenv
+   MLIR_TEST_FILE
+   %{dep:simple_arith.mlir}
+   (run %{exe:test_driver.exe} test)))
+ (flags
+  (:standard
+   -cclib
+   "-L/opt/homebrew/opt/llvm/lib"
+   -cclib
+   "-Wl,-rpath,/opt/homebrew/opt/llvm/lib"
+   -cclib
+   "-Wl,-export_dynamic"
+   -cclib
+   "-Wl,-force_load,/opt/homebrew/opt/llvm/lib/libMLIRCAPIIR.a"
+   -cclib
+   "-Wl,-force_load,/opt/homebrew/opt/llvm/lib/libMLIRCAPIFunc.a"
+   -cclib
+   "-Wl,-force_load,/opt/homebrew/opt/llvm/lib/libMLIRCAPIArith.a"
+   -cclib
+   "-Wl,-force_load,/opt/homebrew/opt/llvm/lib/libMLIRCAPIRegisterEverything.a"
+   -cclib
+   "-lc++"
+   -cclib
+   "-lc++abi"
+   -cclib
+   "-lMLIR"
+   -cclib
+   "-lLLVM-C"
+   -cclib
+   "-lLLVM")))

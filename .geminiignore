@@ -12,7 +12,6 @@
 **.cmi
 **.cmx
 **.null
-**/_build
 src/main.native
 src/vellvm
 src/vellvmqc
