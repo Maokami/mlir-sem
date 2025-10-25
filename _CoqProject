@@ -1,3 +1,4 @@
+-R _build/default/src MlirSem
 -R src MlirSem
 
 -arg -w -arg -masking-absolute-name

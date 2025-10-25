@@ -11,19 +11,19 @@
  (flags
   (:standard
    -cclib
-   "-L/opt/homebrew/opt/llvm/lib"
+   "-L%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}"
    -cclib
-   "-Wl,-rpath,/opt/homebrew/opt/llvm/lib"
+   "-Wl,-rpath,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}"
    -cclib
    "-Wl,-export_dynamic"
    -cclib
-   "-Wl,-force_load,/opt/homebrew/opt/llvm/lib/libMLIRCAPIIR.a"
+   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIIR.a"
    -cclib
-   "-Wl,-force_load,/opt/homebrew/opt/llvm/lib/libMLIRCAPIFunc.a"
+   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIFunc.a"
    -cclib
-   "-Wl,-force_load,/opt/homebrew/opt/llvm/lib/libMLIRCAPIArith.a"
+   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIArith.a"
    -cclib
-   "-Wl,-force_load,/opt/homebrew/opt/llvm/lib/libMLIRCAPIRegisterEverything.a"
+   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIRegisterEverything.a"
    -cclib
    "-lc++"
    -cclib
