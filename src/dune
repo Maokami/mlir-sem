@@ -11,7 +11,7 @@
   Semantics.Values
   Semantics.Events
   Semantics.Denotation
-  Semantics.Interpreter
+  Semantics.Interp
   Theory.Correctness
   Main)
  (flags -R src MlirSem)

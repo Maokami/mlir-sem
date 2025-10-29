@@ -1,17 +1,35 @@
 (include_subdirs no)
 
-; Generate OCaml from Coq using our Extract.v driver.
+; Rule to generate OCaml files from Coq
 
 (rule
- (targets AST.ml AST.mli)
- (deps Extract.v ../Syntax/AST.vo)
+ (targets
+  AST.ml
+  AST.mli
+  Values.ml
+  Values.mli
+  Events.ml
+  Events.mli
+  Denotation.ml
+  Denotation.mli
+  Interp.ml
+  Interp.mli)
+ (deps
+  Extract.v
+  ../Syntax/AST.vo
+  ../Semantics/Values.vo
+  ../Semantics/Events.vo
+  ../Semantics/Denotation.vo
+  ../Semantics/Interp.vo)
  (action
   (run coqc -q -R %{project_root}/src MlirSem %{dep:Extract.v})))
 
-; Build a Dune library from the generated files.
+; Library built from the generated files
 
 (library
  (name mlir_sem_extracted)
- (modules AST)
+ (modules AST Values Events Denotation Interp)
  (libraries zarith)
- (wrapped false))
+ (flags
+  (:standard -w -67 -w -39 -w -20))
+ (wrapped true))

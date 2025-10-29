@@ -13,6 +13,8 @@ depends: [
   "coq-ext-lib" {>= "0.13.0" & < "0.14~"}
   "coq-itree" {>= "5.2.0" & < "5.3~"}
   "coq-paco"  {>= "4.2.3" & < "4.3~"}
+  "alcotest" {>= "1.9.1"}
+  "ctypes-foreign" {>= "0.23.0"}
 ]
 tags: [
   "category:Computer Science/Programming Languages/Formal Definitions and Theory"

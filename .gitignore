@@ -52,3 +52,5 @@ RocqMakefile
 .RocqMakefile.d
 RocqMakefile.conf
 .#*
+
+.vscode

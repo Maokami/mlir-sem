@@ -72,9 +72,18 @@ Definition build_program_context (prog : mlir_program) : program_context :=
     prog.
 
 
-(** [run_program] is the top-level execution function. *)
-Definition run_program (prog: mlir_program) (main_fn: string) : option (list mlir_value) :=
+(** [run_program] is the top-level execution function.
+    It sets up the initial state and returns the initial, interpreted ITree
+    to be executed by an external runner. *)
+Definition run_program (prog: mlir_program) (main_fn: string)
+  : option (itree MlirSemE (interpreter_state * unit)) :=
   let ctx := build_program_context prog in
-  let _init_state := {| prog_ctx := ctx; call_stack := [] |} in
-  (* TODO: look up [main_fn] in [ctx], push an initial call_frame, and drive interpretation. *)
-  None.
+  match ZStringMap.find main_fn ctx with
+  | None => None (* Main function not found *)
+  | Some main_body =>
+      let main_func := FuncOp main_fn (FunctionType [] []) main_body in
+      let t := denote_func main_func in
+      let initial_frame := ZStringMap.empty mlir_value in
+      let s0 := {| prog_ctx := ctx; call_stack := [initial_frame] |} in
+      Some ((interpret t) s0)
+  end.

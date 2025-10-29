@@ -1,3 +1,8 @@
 [submodule "deps/vellvm"]
 	path = deps/vellvm
 	url = git@github.com:vellvm/vellvm.git
+
+[submodule "deps/InteractionTrees"]
+	path = deps/InteractionTrees
+	url = git@github.com:DeepSpec/InteractionTrees.git
+    

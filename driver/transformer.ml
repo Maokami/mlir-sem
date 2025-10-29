@@ -1,5 +1,5 @@
 open Ctypes
-open AST
+open Mlir_sem_extracted
 
 (* Helper to convert MlirStringRef to OCaml string *)
 let string_of_mlir_string_ref
@@ -24,7 +24,7 @@ let get_value_name (v : Bindings.mlir_value) : string =
     Hashtbl.add value_map v name;
     name
 
-let rec transform_operation (c_op : Bindings.mlir_operation) : operation =
+let rec transform_operation (c_op : Bindings.mlir_operation) : Interp.operation =
   let op_name_ident = Bindings.operation_get_identifier c_op in
   let op_name_ref = Bindings.operation_get_name op_name_ident in
   let op_name = string_of_mlir_string_ref op_name_ref in
@@ -65,14 +65,14 @@ let rec transform_operation (c_op : Bindings.mlir_operation) : operation =
   | _ -> failwith ("Unsupported operation: " ^ op_name)
 
 and transform_operations_in_block (c_op : Bindings.mlir_operation) :
-    operation list =
+    Interp.operation list =
   if is_null c_op then []
   else
     let ocaml_op = transform_operation c_op in
     let next_op = Bindings.operation_get_next_in_block c_op in
     ocaml_op :: transform_operations_in_block next_op
 
-and transform_block (c_block : Bindings.mlir_block) : block =
+and transform_block (c_block : Bindings.mlir_block) : Interp.block =
   let first_op = Bindings.block_get_first_operation c_block in
   let ops = transform_operations_in_block first_op in
   (* TODO: get block name and args *)
@@ -84,13 +84,13 @@ and transform_block (c_block : Bindings.mlir_block) : block =
     block_ops = ops;
   }
 
-and transform_region (c_region : Bindings.mlir_region) : region =
+and transform_region (c_region : Bindings.mlir_region) : Interp.region =
   let first_block = Bindings.region_get_first_block c_region in
   if is_null first_block then [] else [ transform_block first_block ]
 (* TODO: Handle multiple blocks *)
 
 (* Transforms a func.func operation into our AST *)
-let transform_func (c_op : Bindings.mlir_operation) : mlir_func =
+let transform_func (c_op : Bindings.mlir_operation) : Interp.mlir_func =
   let op_name_ident = Bindings.operation_get_identifier c_op in
   let op_name_ref = Bindings.operation_get_name op_name_ident in
   let _op_name = string_of_mlir_string_ref op_name_ref in
@@ -110,7 +110,7 @@ let transform_func (c_op : Bindings.mlir_operation) : mlir_func =
 (* Placeholder for type *)
 
 (* Transforms a C-API mlirModule into our OCaml AST for mlir_program *)
-let transform_module (c_module : Bindings.mlir_module) : mlir_program =
+let transform_module (c_module : Bindings.mlir_module) : Interp.mlir_program =
   reset_value_map ();
   let top_level_op = Bindings.module_get_operation c_module in
 
@@ -120,7 +120,7 @@ let transform_module (c_module : Bindings.mlir_module) : mlir_program =
   let block = Bindings.region_get_first_block region in
 
   let rec transform_top_level_ops (c_op : Bindings.mlir_operation) :
-      mlir_program =
+      Interp.mlir_program =
     if is_null c_op then []
     else
       let func = transform_func c_op in

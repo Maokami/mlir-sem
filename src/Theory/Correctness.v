@@ -1,6 +1,6 @@
 (* src/Theory/Correctness.v *)
 From Stdlib Require Import String ZArith List.
-From MlirSem Require Import Syntax.AST Semantics.Interpreter Semantics.Values.
+From MlirSem Require Import Syntax.AST Semantics.Interp Semantics.Values.
 
 Import ListNotations.
 Local Open Scope string_scope.
@@ -44,10 +44,11 @@ Module Example.
   Definition program : mlir_program := [add_func; main_func].
 
   (** We want to prove that running this program results in 42. *)
-  Theorem example_correct :
+  (* Theorem example_correct :
     run_program program "main" = Some []. (* Should be Some [IntVal 42] eventually *)
   Proof.
     (* The interpreter is not fully implemented yet. *)
-    Admitted.
+    Admitted. *)
+
 
 End Example.

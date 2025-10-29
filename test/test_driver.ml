@@ -1,6 +1,7 @@
 open Alcotest
-open Driver
-open AST
+open Driver.Bindings
+open Driver.Transformer
+open Mlir_sem_extracted
 
 (* Alcotest testable for Z.t *)
 let z_testable = testable (Fmt.of_to_string Z.to_string) Z.equal
@@ -29,28 +30,28 @@ let test_parse_and_transform () =
   let filename = get_test_file () in
   let file_content = read_file filename in
 
-  let ctx = Bindings.context_create () in
+  let ctx = context_create () in
   try
-    let func_dialect = Bindings.get_func_dialect () in
-    let arith_dialect = Bindings.get_arith_dialect () in
-    Bindings.register_dialect func_dialect ctx;
-    Bindings.register_dialect arith_dialect ctx;
+    let func_dialect = get_func_dialect () in
+    let arith_dialect = get_arith_dialect () in
+    register_dialect func_dialect ctx;
+    register_dialect arith_dialect ctx;
 
-    let mlir_string = Bindings.string_ref_create_from_string file_content in
-    let c_module = Bindings.module_create_parse ctx mlir_string in
+    let mlir_string = string_ref_create_from_string file_content in
+    let c_module = module_create_parse ctx mlir_string in
 
     (* Check 1: Parsing was successful *)
     check bool "Module should not be null" false
-      (Bindings.module_is_null c_module);
+      (module_is_null c_module);
 
     (* Check 2: Transform the module and check its structure *)
-    let ocaml_prog = Transformer.transform_module c_module in
+    let ocaml_prog = transform_module c_module in
     check (list string) "Should contain one function named 'main'" [ "main" ]
-      (List.map (function FuncOp (name, _, _) -> name) ocaml_prog);
+      (List.map (function Interp.FuncOp (name, _, _) -> name) ocaml_prog);
 
     (* Check 3: Check the function body *)
     let func = List.hd ocaml_prog in
-    let (FuncOp (_, _, body)) = func in
+    let (Interp.FuncOp (_, _, body)) = func in
     check int "Function body should contain one block" 1 (List.length body);
     let block = List.hd body in
     check int "Block should have 2 operations" 2 (List.length block.block_ops);
@@ -68,10 +69,10 @@ let test_parse_and_transform () =
     | _ ->
         Alcotest.fail "Second operation should be func.return with operand %0");
 
-    Bindings.module_destroy c_module;
-    Bindings.context_destroy ctx
+    module_destroy c_module;
+    context_destroy ctx
   with e ->
-    Bindings.context_destroy ctx;
+    context_destroy ctx;
     raise e
 
 (* The test suite *)
