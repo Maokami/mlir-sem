@@ -34,6 +34,10 @@ type mlir_type = unit ptr
 
 let mlir_type : mlir_type typ = ptr void
 
+type mlir_type_id = unit ptr
+
+let mlir_type_id : mlir_type_id typ = ptr void
+
 type mlir_attribute = unit ptr
 
 let mlir_attribute : mlir_attribute typ = ptr void
@@ -128,7 +132,7 @@ let operation_get_operand =
     (mlir_operation @-> intptr_t @-> returning mlir_value)
 
 let operation_get_attribute_by_name =
-  foreign "mlirOperationGetInherentAttributeByName"
+  foreign "mlirOperationGetAttributeByName"
     (mlir_operation @-> mlir_string_ref @-> returning mlir_attribute)
 
 let attribute_is_a_integer =
@@ -137,9 +141,40 @@ let attribute_is_a_integer =
 let integer_attr_get_value_int =
   foreign "mlirIntegerAttrGetValueInt" (mlir_attribute @-> returning int64_t)
 
+let attribute_is_a_type =
+  foreign "mlirAttributeIsAType" (mlir_attribute @-> returning bool)
+
+let attribute_get_type =
+  foreign "mlirAttributeGetType" (mlir_attribute @-> returning mlir_type)
+
+let attribute_is_null (attr : mlir_attribute) = Ctypes.is_null attr
+
+let type_attr_get_value =
+  foreign "mlirTypeAttrGetValue" (mlir_attribute @-> returning mlir_type)
+
 (* Types *)
+let operation_get_type =
+  foreign "mlirOperationGetTypeID" (mlir_operation @-> returning mlir_type_id)
+
 let value_get_type =
   foreign "mlirValueGetType" (mlir_value @-> returning mlir_type)
+
+let type_is_a_function =
+  foreign "mlirTypeIsAFunction" (mlir_type @-> returning bool)
+
+let function_type_get_num_inputs =
+  foreign "mlirFunctionTypeGetNumInputs" (mlir_type @-> returning intptr_t)
+
+let function_type_get_input =
+  foreign "mlirFunctionTypeGetInput"
+    (mlir_type @-> intptr_t @-> returning mlir_type)
+
+let function_type_get_num_results =
+  foreign "mlirFunctionTypeGetNumResults" (mlir_type @-> returning intptr_t)
+
+let function_type_get_result =
+  foreign "mlirFunctionTypeGetResult"
+    (mlir_type @-> intptr_t @-> returning mlir_type)
 
 let type_is_a_integer =
   foreign "mlirTypeIsAInteger" (mlir_type @-> returning bool)
@@ -151,3 +186,8 @@ let integer_type_get_width =
 let operation_print =
   foreign "mlirOperationPrint"
     (mlir_operation @-> mlir_string_callback @-> ptr void @-> returning void)
+
+let operation_dump =
+  foreign "mlirOperationDump" (mlir_operation @-> returning void)
+
+let type_dump = foreign "mlirTypeDump" (mlir_type @-> returning void)

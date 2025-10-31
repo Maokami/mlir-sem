@@ -1,0 +1,5 @@
+func.func @main () -> (i32) {
+entry:
+  %0 = arith.constant 42 : i32
+  func.return %0
+}

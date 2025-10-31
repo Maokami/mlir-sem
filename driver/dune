@@ -1,11 +1,12 @@
 (library
  (name driver)
- (modules bindings transformer)
+ (modules bindings transformer ast_printer)
  (libraries ctypes ctypes.foreign mlir_sem_extracted zarith)
  (wrapped true))
 
 (executable
  (name run)
+ (public_name driver_run)
  (modules run)
  (libraries driver mlir_sem_extracted)
  (flags

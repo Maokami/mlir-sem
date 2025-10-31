@@ -7,7 +7,10 @@
   (setenv
    MLIR_TEST_FILE
    %{dep:simple_arith.mlir}
-   (run %{exe:test_driver.exe} test)))
+   (setenv
+    RUN_EXE_PATH
+    %{bin:driver_run}
+    (run %{exe:test_driver.exe} test))))
  (flags
   (:standard
    -cclib

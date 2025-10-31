@@ -1,33 +1,35 @@
 open Alcotest
 open Driver.Bindings
 open Driver.Transformer
-open Mlir_sem_extracted
+open Driver.Ast_printer
 
-(* Alcotest testable for Z.t *)
-let z_testable = testable (Fmt.of_to_string Z.to_string) Z.equal
-
-(* Read file content into a string *)
+(* Helper to read file content into a string *)
 let read_file filename =
   let ch = open_in filename in
   let s = really_input_string ch (in_channel_length ch) in
   close_in ch;
   s
 
-let get_test_file () =
-  match Sys.getenv_opt "MLIR_TEST_FILE" with
-  | Some p -> p
-  | None ->
-      let default =
-        match Sys.getenv_opt "DUNE_SOURCEROOT" with
-        | Some root -> Filename.concat root "test/simple_arith.mlir"
-        | None -> "test/simple_arith.mlir"
-      in
-      default
+(* Helper to read expect file content *)
+let read_expect_file filename_base =
+  let expect_dir =
+    match Sys.getenv_opt "DUNE_SOURCEROOT" with
+    | Some root -> Filename.concat root "test/expect"
+    | None -> "test/expect"
+  in
+  read_file (Filename.concat expect_dir filename_base)
 
-(* A test case that checks if a simple MLIR file can be parsed and
-   transformed. *)
-let test_parse_and_transform () =
-  let filename = get_test_file () in
+let get_mlir_test_file filename_base () =
+  let default_path =
+    match Sys.getenv_opt "DUNE_SOURCEROOT" with
+    | Some root -> Filename.concat root (Filename.concat "test" filename_base)
+    | None -> Filename.concat "test" filename_base
+  in
+  default_path
+
+(* Test case for parsing and transforming MLIR to AST, using golden files *)
+let test_parse_and_transform_golden () =
+  let filename = get_mlir_test_file "simple_arith.mlir" () in
   let file_content = read_file filename in
 
   let ctx = context_create () in
@@ -40,40 +42,39 @@ let test_parse_and_transform () =
     let mlir_string = string_ref_create_from_string file_content in
     let c_module = module_create_parse ctx mlir_string in
 
-    (* Check 1: Parsing was successful *)
-    check bool "Module should not be null" false
-      (module_is_null c_module);
+    check bool "Module should not be null" false (module_is_null c_module);
 
-    (* Check 2: Transform the module and check its structure *)
     let ocaml_prog = transform_module c_module in
-    check (list string) "Should contain one function named 'main'" [ "main" ]
-      (List.map (function Interp.FuncOp (name, _, _) -> name) ocaml_prog);
+    let pretty_printed_ast = string_of_mlir_program ocaml_prog in
+    let expected_ast = read_expect_file "simple_arith.ast.expect" in
 
-    (* Check 3: Check the function body *)
-    let func = List.hd ocaml_prog in
-    let (Interp.FuncOp (_, _, body)) = func in
-    check int "Function body should contain one block" 1 (List.length body);
-    let block = List.hd body in
-    check int "Block should have 2 operations" 2 (List.length block.block_ops);
-
-    let op1 = List.hd block.block_ops in
-    (match op1 with
-    | Op ([ "%0" ], Arith_Constant (v, _)) ->
-        check z_testable "Constant should be 42" (Z.of_int 42) v
-    | _ ->
-        Alcotest.fail "First operation should be arith.constant with result %0");
-
-    let op2 = List.nth block.block_ops 1 in
-    (match op2 with
-    | Term (Func_Return [ "%0" ]) -> ()
-    | _ ->
-        Alcotest.fail "Second operation should be func.return with operand %0");
+    check string "Transformed AST should match golden file" expected_ast
+      pretty_printed_ast;
 
     module_destroy c_module;
     context_destroy ctx
   with e ->
     context_destroy ctx;
     raise e
+
+(* Test case for interpreter execution, using golden files *)
+let test_interpreter_execution_golden () =
+  let mlir_file = get_mlir_test_file "simple_arith.mlir" () in
+  let run_exe_path =
+    match Sys.getenv_opt "RUN_EXE_PATH" with
+    | Some p -> p
+    | None -> Alcotest.fail "RUN_EXE_PATH environment variable not set"
+  in
+  let command = Printf.sprintf "%s %s" run_exe_path mlir_file in
+
+  let ic = Unix.open_process_in command in
+  let result_output = input_line ic in
+  let _ = Unix.close_process_in ic in
+
+  let expected_output = read_expect_file "simple_arith.output.expect" in
+
+  check string "Interpreter output should match golden file" expected_output
+    result_output
 
 (* The test suite *)
 let () =
@@ -82,7 +83,12 @@ let () =
     [
       ( "Parser and Transformer",
         [
-          test_case "Parse and transform simple file" `Quick
-            test_parse_and_transform;
+          test_case "Parse and transform simple file (golden)" `Quick
+            test_parse_and_transform_golden;
+        ] );
+      ( "Interpreter Execution",
+        [
+          test_case "Execute simple arith (golden)" `Quick
+            test_interpreter_execution_golden;
         ] );
     ]
