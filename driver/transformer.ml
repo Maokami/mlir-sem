@@ -83,6 +83,16 @@ let rec transform_operation (c_op : Bindings.mlir_operation) : Interp.operation
       let res_c_type = Bindings.value_get_type res_val in
       let res_type = transform_mlir_type res_c_type in
       Interp.Op (results, Arith_Constant (value, res_type))
+  | "arith.addi" ->
+      let op1_val = Bindings.operation_get_operand c_op (Intptr.of_int 0) in
+      let op2_val = Bindings.operation_get_operand c_op (Intptr.of_int 1) in
+      let res_val = Bindings.operation_get_result c_op (Intptr.of_int 0) in
+      let op1_name = get_value_name op1_val in
+      let op2_name = get_value_name op2_val in
+      let res_name = get_value_name res_val in
+      let res_c_type = Bindings.value_get_type res_val in
+      let res_type = transform_mlir_type res_c_type in
+      Interp.Op ([ res_name ], Arith_AddI (op1_name, op2_name, res_type))
   | "func.return" ->
       let num_operands =
         Bindings.operation_get_num_operands c_op |> Intptr.to_int
