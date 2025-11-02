@@ -1,7 +1,10 @@
 (* src/Semantics/Denotation.v *)
 From Stdlib Require Import String ZArith List.
 From ITree Require Import ITree.
+From ITree.Interp Require Import Recursion.
+From Stdlib.FSets Require Import FMapWeakList.
 From MlirSem Require Import Syntax.AST Semantics.Events.
+From Stdlib.Structures Require Import OrderedTypeEx.
 
 From ExtLib.Structures Require Import
      Monad.
@@ -86,53 +89,54 @@ Definition denote_general_op (op: general_op) : itree MlirSemE (list mlir_value)
   end.
 
 (** [denote_terminator] is the denotation function for terminator operations. *)
-Definition denote_terminator (op: terminator_op) : itree MlirSemE void :=
+Definition denote_terminator (op: terminator_op) : itree MlirSemE (block_id + list mlir_value) :=
   match op with
   | Func_Return vals =>
       ret_vals <- read_locals vals;;
-      trigger ((inr1 (inl1 (@Return mlir_value ret_vals))) : MlirSemE void)
+      Ret (inr ret_vals)
   | Cf_Branch dest args =>
-      arg_vals <- read_locals args;;
-      trigger ((inr1 (inr1 (inl1 (@Branch block_id mlir_value dest arg_vals)))) : MlirSemE void)
+      (* TODO: args are ignored for now *)
+      Ret (inl dest)
   | Cf_CondBranch cond true_dest true_args false_dest false_args =>
-      cond_val <- trigger (inl1 (@LocalRead string mlir_value cond)) ;;
-      true_vals <- read_locals true_args;;
-      false_vals <- read_locals false_args;;
-      trigger ((inr1 (inr1 (inl1 (@CondBranch block_id mlir_value cond_val true_dest true_vals false_dest false_vals)))) : MlirSemE void)
+      trigger (inr1 (inr1 (inr1 (Throw "Cf_CondBranch not supported yet"))))
   end.
 
-(** [denote_operation] denotes a single operation, handling result binding. *)
-Definition denote_operation (op: operation) : itree MlirSemE unit :=
-  match op with
-  | Op results g_op =>
-    vals <- denote_general_op g_op;;
-    (* Bind results to values. Assumes results and vals have same length. *)
-    map_monad_ (fun p =>
-      let '(id, vl) := p in
-      trigger (inl1 (@LocalWrite string mlir_value id vl)))
-      (combine results vals)
-  | Term t_op =>
-    v <- denote_terminator t_op;;
-    match v with end (* Terminators return void *)
-  end.
-
-(** [denote_block] denotes all operations in a block. *)
-Fixpoint denote_block (ops: list operation) : itree MlirSemE unit :=
+(** [denote_block] denotes all operations in a block, returning either the next block to execute or the final return value of the function. *)
+Fixpoint denote_block (ops: list operation) : itree MlirSemE (block_id + list mlir_value) :=
   match ops with
-  | [] => Ret tt
-  | op :: rest =>
-    denote_operation op;;
-    denote_block rest
+  | [] => trigger (inr1 (inr1 (inr1 (Throw "Block with no terminator"))))
+  | [Term t_op] => denote_terminator t_op
+  | (Op results g_op) :: rest =>
+      vals <- denote_general_op g_op;;
+      map_monad_ (fun p =>
+        let '(id, vl) := p in
+        trigger (inl1 (@LocalWrite string mlir_value id vl)))
+        (combine results vals);;
+      denote_block rest
+  | _ => trigger (inr1 (inr1 (inr1 (Throw "Malformed block: terminator is not the last operation"))))
   end.
 
-(** [denote_func] is the top-level denotation function for a single function. *)
-Definition denote_func (f: mlir_func) : itree MlirSemE unit :=
+Module BlockMap := FMapWeakList.Make(String_as_OT).
+
+(** [denote_func] is the top-level denotation for a single function.
+    It uses the [iter] combinator to model control flow between blocks. *)
+Definition denote_func (f: mlir_func) : itree MlirSemE (list mlir_value) :=
   match f with
   | FuncOp name type body =>
-    (* For a function, we just denote its body, which is a region.
-       For now, we assume a region has one block and we denote it. *)
-    match body with
-    | [b] => denote_block (block_ops b)
-    | _ => trigger (inr1 (inr1 (inr1 (Throw "functions with multiple blocks not supported yet"))))
-    end
+      let block_map := List.fold_right
+        (fun b map => BlockMap.add (block_name b) b map)
+        (BlockMap.empty block)
+        body
+      in
+      match body with
+      | [] => trigger (inr1 (inr1 (inr1 (Throw "Function with empty body"))))
+      | entry_block :: _ =>
+          iter (C := ktree _) (bif := sum)
+               (fun (current_block_id : block_id) =>
+                  match BlockMap.find current_block_id block_map with
+                  | None => trigger (inr1 (inr1 (inr1 (Throw ("Target block not found: " ++ current_block_id)))))
+                  | Some current_block => denote_block (block_ops current_block)
+                  end)
+               (block_name entry_block)
+      end
   end.

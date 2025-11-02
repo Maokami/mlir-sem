@@ -8,13 +8,17 @@ let string_of_mlir_string_ref
   let length = Ctypes.getf str_ref Bindings.length |> Unsigned.Size_t.to_int in
   string_from_ptr data_ptr ~length
 
-(* State for mapping C pointers to SSA names *)
+(* State for mapping C pointers to SSA names and block names *)
 let value_map : (Bindings.mlir_value, string) Hashtbl.t = Hashtbl.create 16
 let value_counter = ref 0
+let block_map : (Bindings.mlir_block, string) Hashtbl.t = Hashtbl.create 4
+let block_counter = ref 0
 
-let reset_value_map () =
+let reset_maps () =
   Hashtbl.clear value_map;
-  value_counter := 0
+  value_counter := 0;
+  Hashtbl.clear block_map;
+  block_counter := 0
 
 let get_value_name (v : Bindings.mlir_value) : string =
   if Hashtbl.mem value_map v then Hashtbl.find value_map v
@@ -22,6 +26,15 @@ let get_value_name (v : Bindings.mlir_value) : string =
     let name = "%" ^ string_of_int !value_counter in
     incr value_counter;
     Hashtbl.add value_map v name;
+    name
+
+let get_block_name (b : Bindings.mlir_block) : string =
+  if Hashtbl.mem block_map b then Hashtbl.find block_map b
+  else
+    (* This case should ideally not be hit if we pre-populate the map *)
+    let name = "block" ^ string_of_int !block_counter in
+    incr block_counter;
+    Hashtbl.add block_map b name;
     name
 
 let rec transform_mlir_type (c_type : Bindings.mlir_type) : Interp.mlir_type =
@@ -67,9 +80,20 @@ let rec transform_operation (c_op : Bindings.mlir_operation) : Interp.operation
           (Bindings.string_ref_create_from_string "value")
       in
       let value =
-        Bindings.integer_attr_get_value_int value_attr |> Z.of_int64
+        if Bindings.attribute_is_null value_attr then Z.zero
+        else if Bindings.attribute_is_a_integer value_attr then
+          Bindings.integer_attr_get_value_int value_attr |> Z.of_int64
+        else if Bindings.attribute_is_a_dense_int_elements value_attr then
+          let raw_value =
+            if Bindings.dense_elements_attr_is_splat value_attr then
+              Bindings.dense_elements_attr_get_int64_splat_value value_attr
+            else
+              Bindings.dense_elements_attr_get_int64_value value_attr
+                (Intptr.of_int 0)
+          in
+          Z.of_int64 raw_value
+        else Z.zero
       in
-
       let num_results =
         Bindings.operation_get_num_results c_op |> Intptr.to_int
       in
@@ -104,6 +128,12 @@ let rec transform_operation (c_op : Bindings.mlir_operation) : Interp.operation
         else []
       in
       Interp.Term (Func_Return operands)
+  | "cf.br" ->
+      let successor_block =
+        Bindings.operation_get_successor c_op (Intptr.of_int 0)
+      in
+      let block_name = get_block_name successor_block in
+      Interp.Term (Cf_Branch (block_name, []))
   | _ -> failwith ("Unsupported operation: " ^ op_name)
 
 and transform_operations_in_block (c_op : Bindings.mlir_operation) :
@@ -117,19 +147,36 @@ and transform_operations_in_block (c_op : Bindings.mlir_operation) :
 and transform_block (c_block : Bindings.mlir_block) : Interp.block =
   let first_op = Bindings.block_get_first_operation c_block in
   let ops = transform_operations_in_block first_op in
-  (* TODO: get block name and args *)
+  let block_name = get_block_name c_block in
+  (* TODO: get block args *)
   {
-    Interp.block_name = "entry";
-    (* placeholder *)
+    Interp.block_name;
     Interp.block_args = [];
     (* placeholder *)
     Interp.block_ops = ops;
   }
 
 and transform_region (c_region : Bindings.mlir_region) : Interp.region =
+  (* First, iterate over all blocks to populate the name map *)
+  let rec populate_block_map (c_block : Bindings.mlir_block) =
+    (if not (is_null c_block) then
+       let _ = get_block_name c_block in
+       populate_block_map (Bindings.block_get_next_in_region c_block));
+    ()
+  in
   let first_block = Bindings.region_get_first_block c_region in
-  if is_null first_block then [] else [ transform_block first_block ]
-(* TODO: Handle multiple blocks *)
+  populate_block_map first_block;
+
+  (* Then, transform all blocks *)
+  let rec transform_all_blocks (c_block : Bindings.mlir_block) :
+      Interp.block list =
+    if is_null c_block then []
+    else
+      let ocaml_block = transform_block c_block in
+      let next_block = Bindings.block_get_next_in_region c_block in
+      ocaml_block :: transform_all_blocks next_block
+  in
+  transform_all_blocks first_block
 
 (* Transforms a func.func operation into our AST *)
 let transform_func (c_op : Bindings.mlir_operation) : Interp.mlir_func =
@@ -167,7 +214,7 @@ let transform_func (c_op : Bindings.mlir_operation) : Interp.mlir_func =
 
 (* Transforms a C-API mlirModule into our OCaml AST for mlir_program *)
 let transform_module (c_module : Bindings.mlir_module) : Interp.mlir_program =
-  reset_value_map ();
+  reset_maps ();
   let top_level_op = Bindings.module_get_operation c_module in
 
   (* A module has one region with one block containing the top-level operations

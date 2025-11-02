@@ -76,7 +76,7 @@ Definition build_program_context (prog : mlir_program) : program_context :=
     It sets up the initial state and returns the initial, interpreted ITree
     to be executed by an external runner. *)
 Definition run_program (prog: mlir_program) (main_fn: string)
-  : option (itree MlirSemE (interpreter_state * unit)) :=
+  : option (itree MlirSemE (interpreter_state * list mlir_value)) :=
   let ctx := build_program_context prog in
   match ZStringMap.find main_fn ctx with
   | None => None (* Main function not found *)

@@ -1,0 +1,10 @@
+func.func @main () -> (i32) {
+block0:
+  cf.br ^block2()
+block1:
+  %0 = arith.constant 99 : i32
+  func.return %0
+block2:
+  %1 = arith.constant 42 : i32
+  func.return %1
+}

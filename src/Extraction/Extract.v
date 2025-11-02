@@ -10,5 +10,5 @@ Set Extraction Output Directory ".".
 Extraction "AST.ml" mlir_type arith_cmp_pred general_op terminator_op operation block region mlir_func mlir_program.
 Extraction "Values.ml" mlir_value.
 Extraction "Events.ml" LocalE FunctionE ControlE FailureE MlirSemE raise.
-Extraction "Denotation.ml" denote_general_op denote_terminator denote_operation denote_block denote_func.
+Extraction "Denotation.ml" denote_general_op denote_terminator denote_block denote_func.
 Extraction "Interp.ml" call_frame function_def program_context interpreter_state handle_event interpret build_program_context run_program.

@@ -79,6 +79,9 @@ let get_func_dialect =
 let get_arith_dialect =
   foreign "mlirGetDialectHandle__arith__" (void @-> returning dialect_handle)
 
+let get_cf_dialect =
+  foreign "mlirGetDialectHandle__cf__" (void @-> returning dialect_handle)
+
 let string_ref_create_from_string =
   foreign "mlirStringRefCreateFromCString" (string @-> returning mlir_string_ref)
 
@@ -116,6 +119,16 @@ let operation_get_next_in_block =
   foreign "mlirOperationGetNextInBlock"
     (mlir_operation @-> returning mlir_operation)
 
+let operation_get_num_successors =
+  foreign "mlirOperationGetNumSuccessors" (mlir_operation @-> returning intptr_t)
+
+let operation_get_successor =
+  foreign "mlirOperationGetSuccessor"
+    (mlir_operation @-> intptr_t @-> returning mlir_block)
+
+let block_get_next_in_region =
+  foreign "mlirBlockGetNextInRegion" (mlir_block @-> returning mlir_block)
+
 (* Operations and Attributes *)
 let operation_get_num_results =
   foreign "mlirOperationGetNumResults" (mlir_operation @-> returning intptr_t)
@@ -140,6 +153,23 @@ let attribute_is_a_integer =
 
 let integer_attr_get_value_int =
   foreign "mlirIntegerAttrGetValueInt" (mlir_attribute @-> returning int64_t)
+
+let attribute_is_a_dense_elements =
+  foreign "mlirAttributeIsADenseElements" (mlir_attribute @-> returning bool)
+
+let attribute_is_a_dense_int_elements =
+  foreign "mlirAttributeIsADenseIntElements" (mlir_attribute @-> returning bool)
+
+let dense_elements_attr_is_splat =
+  foreign "mlirDenseElementsAttrIsSplat" (mlir_attribute @-> returning bool)
+
+let dense_elements_attr_get_int64_splat_value =
+  foreign "mlirDenseElementsAttrGetInt64SplatValue"
+    (mlir_attribute @-> returning int64_t)
+
+let dense_elements_attr_get_int64_value =
+  foreign "mlirDenseElementsAttrGetInt64Value"
+    (mlir_attribute @-> intptr_t @-> returning int64_t)
 
 let attribute_is_a_type =
   foreign "mlirAttributeIsAType" (mlir_attribute @-> returning bool)

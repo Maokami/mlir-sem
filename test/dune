@@ -26,6 +26,8 @@
    -cclib
    "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIArith.a"
    -cclib
+   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIControlFlow.a"
+   -cclib
    "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIRegisterEverything.a"
    -cclib
    "-lc++"
