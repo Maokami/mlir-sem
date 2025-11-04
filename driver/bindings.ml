@@ -126,6 +126,13 @@ let operation_get_successor =
   foreign "mlirOperationGetSuccessor"
     (mlir_operation @-> intptr_t @-> returning mlir_block)
 
+let block_get_num_arguments =
+  foreign "mlirBlockGetNumArguments" (mlir_block @-> returning intptr_t)
+
+let block_get_argument =
+  foreign "mlirBlockGetArgument"
+    (mlir_block @-> intptr_t @-> returning mlir_value)
+
 let block_get_next_in_region =
   foreign "mlirBlockGetNextInRegion" (mlir_block @-> returning mlir_block)
 
@@ -151,6 +158,9 @@ let operation_get_attribute_by_name =
 let attribute_is_a_integer =
   foreign "mlirAttributeIsAInteger" (mlir_attribute @-> returning bool)
 
+let attribute_is_a_string =
+  foreign "mlirAttributeIsAString" (mlir_attribute @-> returning bool)
+
 let integer_attr_get_value_int =
   foreign "mlirIntegerAttrGetValueInt" (mlir_attribute @-> returning int64_t)
 
@@ -170,6 +180,9 @@ let dense_elements_attr_get_int64_splat_value =
 let dense_elements_attr_get_int64_value =
   foreign "mlirDenseElementsAttrGetInt64Value"
     (mlir_attribute @-> intptr_t @-> returning int64_t)
+
+let string_attr_get_value =
+  foreign "mlirStringAttrGetValue" (mlir_attribute @-> returning mlir_string_ref)
 
 let attribute_is_a_type =
   foreign "mlirAttributeIsAType" (mlir_attribute @-> returning bool)

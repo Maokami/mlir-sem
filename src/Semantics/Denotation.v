@@ -89,20 +89,28 @@ Definition denote_general_op (op: general_op) : itree MlirSemE (list mlir_value)
   end.
 
 (** [denote_terminator] is the denotation function for terminator operations. *)
-Definition denote_terminator (op: terminator_op) : itree MlirSemE (block_id + list mlir_value) :=
+Definition denote_terminator (op: terminator_op) : itree MlirSemE ((block_id * list mlir_value) + list mlir_value) :=
   match op with
   | Func_Return vals =>
       ret_vals <- read_locals vals;;
       Ret (inr ret_vals)
   | Cf_Branch dest args =>
-      (* TODO: args are ignored for now *)
-      Ret (inl dest)
+      arg_vals <- read_locals args;;
+      Ret (inl (dest, arg_vals))
   | Cf_CondBranch cond true_dest true_args false_dest false_args =>
-      trigger (inr1 (inr1 (inr1 (Throw "Cf_CondBranch not supported yet"))))
+      cond_val <- trigger (inl1 (@LocalRead string mlir_value cond)) ;;
+      match cond_val with
+      | IntVal 0 => (* false branch *)
+          arg_vals <- read_locals false_args;;
+          Ret (inl (false_dest, arg_vals))
+      | IntVal _ => (* true branch for any non-zero int *)
+          arg_vals <- read_locals true_args;;
+          Ret (inl (true_dest, arg_vals))
+      end
   end.
 
 (** [denote_block] denotes all operations in a block, returning either the next block to execute or the final return value of the function. *)
-Fixpoint denote_block (ops: list operation) : itree MlirSemE (block_id + list mlir_value) :=
+Fixpoint denote_block (ops: list operation) : itree MlirSemE ((block_id * list mlir_value) + list mlir_value) :=
   match ops with
   | [] => trigger (inr1 (inr1 (inr1 (Throw "Block with no terminator"))))
   | [Term t_op] => denote_terminator t_op
@@ -132,11 +140,20 @@ Definition denote_func (f: mlir_func) : itree MlirSemE (list mlir_value) :=
       | [] => trigger (inr1 (inr1 (inr1 (Throw "Function with empty body"))))
       | entry_block :: _ =>
           iter (C := ktree _) (bif := sum)
-               (fun (current_block_id : block_id) =>
+               (fun (b_info : block_id * list mlir_value) =>
+                  let '(current_block_id, current_args) := b_info in
                   match BlockMap.find current_block_id block_map with
                   | None => trigger (inr1 (inr1 (inr1 (Throw ("Target block not found: " ++ current_block_id)))))
-                  | Some current_block => denote_block (block_ops current_block)
+                  | Some current_block =>
+                      (* Bind block arguments to their values *)
+                      let block_arg_names := fst (List.split (block_args current_block)) in
+                      map_monad_ (fun p =>
+                        let '(id, vl) := p in
+                        trigger (inl1 (@LocalWrite string mlir_value id vl)))
+                        (combine block_arg_names current_args);;
+                      (* Now denote the block's operations *)
+                      denote_block (block_ops current_block)
                   end)
-               (block_name entry_block)
+               (block_name entry_block, []) (* Entry block of main has no args *)
       end
   end.

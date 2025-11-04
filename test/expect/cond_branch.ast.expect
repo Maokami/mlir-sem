@@ -1,0 +1,19 @@
+func.func @main () -> (i32) {
+block0:
+  %0 = arith.constant 1 : i32
+  %1 = arith.constant 0 : i32
+  %2 = arith.constant 10 : i32
+  %3 = arith.constant 20 : i32
+  %4 = arith.cmpi "ne", %0, %1 : i1
+  cf.cond_br %4, ^block1(%2), ^block2(%3)
+block1(%5:i32):
+  %6 = arith.constant 5 : i32
+  %7 = arith.addi %5, %6 : i32
+  cf.br ^block3(%7)
+block2(%8:i32):
+  %9 = arith.constant 1 : i32
+  %10 = arith.addi %8, %9 : i32
+  cf.br ^block3(%10)
+block3(%11:i32):
+  func.return %11
+}

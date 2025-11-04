@@ -30,7 +30,7 @@ let string_of_general_op (op : Interp.general_op) : string =
   | Interp.Arith_CmpI (pred, lhs, rhs, ty) ->
       "arith.cmpi \""
       ^ string_of_arith_cmp_pred pred
-      ^ ", " ^ lhs ^ ", " ^ rhs ^ " : " ^ string_of_mlir_type ty
+      ^ "\", " ^ lhs ^ ", " ^ rhs ^ " : " ^ string_of_mlir_type ty
   | Interp.Func_Call (callee, args, fty) -> (
       let args_s = String.concat ", " args in
       match fty with
