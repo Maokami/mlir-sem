@@ -1,6 +1,6 @@
 # Project Development Guide
 
-This project aims to build an **extensible and compositional denotational semantics framework for MLIR in Coq**, leveraging **ITrees** and supporting **formal verification of MLIR optimizations** and **reference interpreter extraction**, similar in spirit to Vellvm for LLVM IR.
+In MLIR, a dialect's semantics are implicitly defined by its syntax and lowering passes. This project aims to make these semantics explicit and formal. We are building an **extensible and compositional framework in Coq for defining the formal semantics of MLIR dialects**, leveraging **ITrees**. This modular approach, mirroring MLIR's own design, will allow users to easily define semantics for their own dialects. The framework will support the **formal verification of MLIR optimizations** and the **extraction of reference interpreters**, similar in spirit to Vellvm for LLVM IR.
 
 ## Core Principles
 
