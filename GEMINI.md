@@ -130,6 +130,8 @@ Example:
   `docs/design/vellvm-comparison.md`
 
 ## Issue and PR Workflow
+- **Language:** All communication, including issue titles, bodies, comments, commit messages, and pull request descriptions, must be in English.
+
 - Create a **GitHub issue** for each meaningful work unit before starting development. A good issue should include:
   - **Goal:** The high-level objective (e.g., new feature, bug fix).
   - **Rationale:** Why the change is needed.

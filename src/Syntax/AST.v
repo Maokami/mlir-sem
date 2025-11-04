@@ -15,6 +15,7 @@ Inductive general_op : Set :=
 | Arith_Constant (val: Z) (res_type: mlir_type)
 | Arith_AddI (lhs: value_id) (rhs: value_id) (res_type: mlir_type)
 | Arith_CmpI (pred: arith_cmp_pred) (lhs: value_id) (rhs: value_id) (res_type: mlir_type)
+(* TODO: The operand type for Arith_CmpI is currently lost. This should be added for perfect pretty-printing. *)
 | Func_Call (callee: string) (args: list value_id) (res_type: mlir_type).
 
 (** [terminator_op] represents operations that terminate a block. *)

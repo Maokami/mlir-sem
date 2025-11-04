@@ -164,6 +164,7 @@ let rec transform_operation (c_op : Bindings.mlir_operation) : Interp.operation 
 
       let res_c_type = Bindings.value_get_type res_val in
       let res_type = transform_mlir_type res_c_type in
+      (* TODO: The operand type for Arith_CmpI is currently lost. This should be added for perfect pretty-printing. *)
       Interp.Op ([ res_name ], Arith_CmpI (pred, op1_name, op2_name, res_type))
   | "func.return" ->
       let num_operands =
@@ -197,9 +198,13 @@ let rec transform_operation (c_op : Bindings.mlir_operation) : Interp.operation 
       in
       let false_block_name = get_block_name false_block in
 
-      let all_operands = get_all_operands c_op in
-      let cond_name = List.hd all_operands in
-      let arg_operands = List.tl all_operands in
+      let cond_name, arg_operands =
+        match get_all_operands c_op with
+        | h :: t -> (h, t)
+        | [] ->
+            failwith
+              "cf.cond_br operation requires at least one operand (condition)"
+      in
 
       let rec split_list at list =
         if at = 0 then ([], list)
