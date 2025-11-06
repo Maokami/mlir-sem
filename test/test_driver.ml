@@ -49,6 +49,48 @@ let with_mlir_context (f : mlir_context -> unit) : unit =
       register_dialect cf_dialect ctx;
       f ctx)
 
+(* Helper to run mlir-opt on a file *)
+let run_mlir_opt mlir_file_path pass_pipeline output_path =
+  let mlir_opt_path =
+    match Sys.getenv_opt "MLIR_OPT_PATH" with
+    | Some p -> p
+    | None -> "mlir-opt" (* Use PATH default *)
+  in
+  let args = [|
+    mlir_opt_path;
+    mlir_file_path;
+    "-pass-pipeline";
+    pass_pipeline;
+    "-o";
+    output_path;
+  |] in
+  let pid = Unix.create_process mlir_opt_path args
+    Unix.stdin Unix.stdout Unix.stderr in
+  let _, status = Unix.waitpid [] pid in
+  match status with
+  | Unix.WEXITED 0 -> ()
+  | Unix.WEXITED exit_code ->
+      Alcotest.fail (Printf.sprintf "mlir-opt failed with exit code %d" exit_code)
+  | Unix.WSIGNALED s ->
+      Alcotest.fail (Printf.sprintf "mlir-opt killed by signal %d" s)
+  | Unix.WSTOPPED s ->
+      Alcotest.fail (Printf.sprintf "mlir-opt stopped by signal %d" s)
+
+(* Helper to run interpreter and get output *)
+let run_interpreter mlir_file_path =
+  let run_exe_path =
+    match Sys.getenv_opt "RUN_EXE_PATH" with
+    | Some p -> p
+    | None -> Alcotest.fail "RUN_EXE_PATH environment variable not set"
+  in
+  let command_args = [| run_exe_path; mlir_file_path |] in
+  let ic = Unix.open_process_args_in run_exe_path command_args in
+  let result_output = In_channel.input_all ic in
+  let status = Unix.close_process_in ic in
+  match status with
+  | Unix.WEXITED 0 -> String.trim result_output
+  | _ -> Alcotest.fail "Interpreter execution failed"
+
 (* Generic test case for parsing and transforming MLIR to AST *)
 let make_parse_and_transform_test ~name ~mlir_file ~expect_file =
   test_case name `Quick (fun () ->
@@ -72,76 +114,36 @@ let make_parse_and_transform_test ~name ~mlir_file ~expect_file =
 let make_interpreter_execution_test ~name ~mlir_file ~expect_file =
   test_case name `Quick (fun () ->
       let mlir_file_path = get_mlir_test_file mlir_file () in
-      let run_exe_path =
-        match Sys.getenv_opt "RUN_EXE_PATH" with
-        | Some p -> p
-        | None -> Alcotest.fail "RUN_EXE_PATH environment variable not set"
-      in
-      let command = Printf.sprintf "%s %s" run_exe_path mlir_file_path in
-      let ic = Unix.open_process_in command in
-      let result_output = input_line ic in
-      let _ = Unix.close_process_in ic in
-      let expected_output = read_expect_file expect_file in
+      let result_output = run_interpreter mlir_file_path in
+      let expected_output = String.trim (read_expect_file expect_file) in
       check string "Interpreter output should match golden file"
         expected_output result_output)
-
-(* Helper to run mlir-opt on a file *)
-let run_mlir_opt mlir_file_path pass_pipeline output_path =
-  let mlir_opt_path =
-    match Sys.getenv_opt "MLIR_OPT_PATH" with
-    | Some p -> p
-    | None -> "mlir-opt" (* Use PATH default *)
-  in
-  let command =
-    Printf.sprintf "%s %s -pass-pipeline='%s' -o %s"
-      mlir_opt_path mlir_file_path pass_pipeline output_path
-  in
-  let exit_code = Sys.command command in
-  if exit_code <> 0 then
-    Alcotest.fail (Printf.sprintf "mlir-opt failed with exit code %d" exit_code)
-
-(* Helper to run interpreter and get output *)
-let run_interpreter mlir_file_path =
-  let run_exe_path =
-    match Sys.getenv_opt "RUN_EXE_PATH" with
-    | Some p -> p
-    | None -> Alcotest.fail "RUN_EXE_PATH environment variable not set"
-  in
-  let command = Printf.sprintf "%s %s" run_exe_path mlir_file_path in
-  let ic = Unix.open_process_in command in
-  let result_output = input_line ic in
-  let status = Unix.close_process_in ic in
-  match status with
-  | Unix.WEXITED 0 -> result_output
-  | _ -> Alcotest.fail "Interpreter execution failed"
 
 (* Generic test case for oracle testing (pass validation) *)
 let make_translation_validation_test ~name ~mlir_file ~opt_mlir_file ~pass_pipeline =
   test_case name `Quick (fun () ->
       let original_path = get_validation_test_file mlir_file () in
-      let optimized_path =
-        match opt_mlir_file with
-        | Some path -> get_validation_test_file path ()
-        | None ->
-            (* Generate optimized file using mlir-opt *)
-            let temp_file = Filename.temp_file "mlir_opt" ".mlir" in
-            run_mlir_opt original_path pass_pipeline temp_file;
-            temp_file
-      in
-
-      (* Run both files through interpreter *)
-      let original_output = run_interpreter original_path in
-      let optimized_output = run_interpreter optimized_path in
-
-      (* Clean up temp file if we created one *)
-      (match opt_mlir_file with
-       | None -> Sys.remove optimized_path
-       | Some _ -> ());
-
-      (* Compare outputs *)
-      check string
-        (Printf.sprintf "Oracle test: %s should produce same output after optimization" name)
-        original_output optimized_output)
+      match opt_mlir_file with
+      | Some path ->
+          (* Use pre-optimized file *)
+          let optimized_path = get_validation_test_file path () in
+          let original_output = run_interpreter original_path in
+          let optimized_output = run_interpreter optimized_path in
+          check string
+            (Printf.sprintf "Oracle test: %s should produce same output after optimization" name)
+            original_output optimized_output
+      | None ->
+          (* Generate optimized file using mlir-opt, ensure cleanup *)
+          let temp_file = Filename.temp_file "mlir_opt" ".mlir" in
+          Fun.protect
+            ~finally:(fun () -> Sys.remove temp_file)
+            (fun () ->
+              run_mlir_opt original_path pass_pipeline temp_file;
+              let original_output = run_interpreter original_path in
+              let optimized_output = run_interpreter temp_file in
+              check string
+                (Printf.sprintf "Oracle test: %s should produce same output after optimization" name)
+                original_output optimized_output))
 
 (* The test suite *)
 let () =
