@@ -27,6 +27,15 @@ let get_mlir_test_file filename_base () =
   in
   default_path
 
+(* Helper to get validation test file (oracle testing) *)
+let get_validation_test_file filename_base () =
+  let default_path =
+    match Sys.getenv_opt "DUNE_SOURCEROOT" with
+    | Some root -> Filename.concat root (Filename.concat "validation" filename_base)
+    | None -> Filename.concat "validation" filename_base
+  in
+  default_path
+
 let with_mlir_context (f : mlir_context -> unit) : unit =
   let ctx = context_create () in
   Fun.protect
@@ -109,10 +118,10 @@ let run_interpreter mlir_file_path =
 (* Generic test case for oracle testing (pass validation) *)
 let make_translation_validation_test ~name ~mlir_file ~opt_mlir_file ~pass_pipeline =
   test_case name `Quick (fun () ->
-      let original_path = get_mlir_test_file mlir_file () in
+      let original_path = get_validation_test_file mlir_file () in
       let optimized_path =
         match opt_mlir_file with
-        | Some path -> get_mlir_test_file path ()
+        | Some path -> get_validation_test_file path ()
         | None ->
             (* Generate optimized file using mlir-opt *)
             let temp_file = Filename.temp_file "mlir_opt" ".mlir" in
@@ -170,17 +179,17 @@ let () =
         [
           make_translation_validation_test
             ~name:"SCCP constant propagation with addi"
-            ~mlir_file:"sccp_addi.mlir"
-            ~opt_mlir_file:(Some "sccp_addi.opt.mlir")
+            ~mlir_file:"oracle/sccp/sccp_addi.mlir"
+            ~opt_mlir_file:(Some "oracle/sccp/sccp_addi.opt.mlir")
             ~pass_pipeline:"builtin.module(func.func(sccp))";
           make_translation_validation_test
             ~name:"SCCP preserves semantics with constant condition (no DCE)"
-            ~mlir_file:"sccp_branch.mlir"
-            ~opt_mlir_file:(Some "sccp_branch.opt.mlir")
+            ~mlir_file:"oracle/sccp/sccp_branch.mlir"
+            ~opt_mlir_file:(Some "oracle/sccp/sccp_branch.opt.mlir")
             ~pass_pipeline:"builtin.module(func.func(sccp))";
           make_translation_validation_test
             ~name:"SCCP with addi (dynamically generated)"
-            ~mlir_file:"sccp_addi.mlir"
+            ~mlir_file:"oracle/sccp/sccp_addi.mlir"
             ~opt_mlir_file:None
             ~pass_pipeline:"builtin.module(func.func(sccp))";
         ] );
