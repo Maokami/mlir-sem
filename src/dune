@@ -13,6 +13,8 @@
   Semantics.Denotation
   Semantics.Interp
   Theory.Correctness
+  Utils.Tactics
+  Utils.Lemmas
   Main)
  (flags -R src MlirSem)
  (theories Stdlib Paco ITree ExtLib))
