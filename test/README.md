@@ -1,6 +1,17 @@
 # Test Suite
 
-This directory contains the test suite for mlir-sem.
+This directory contains tests for **our tools**: parser, semantics, and interpreter.
+
+**For oracle testing and pass validation**, see [`validation/`](../validation/) directory.
+
+## Purpose
+
+Tests in this directory validate that:
+- Our MLIR parser correctly transforms MLIR text to our Coq AST
+- Our semantics correctly execute programs
+- Extraction works and produces valid OCaml code
+
+Tests here do NOT validate optimization passes—that's done in `validation/`.
 
 ## Structure
 
@@ -9,7 +20,6 @@ test/
 ├── test_driver.ml          # Main test driver (Alcotest)
 ├── dune                    # Build configuration
 ├── *.mlir                  # Test MLIR files
-├── *.opt.mlir              # Optimized MLIR files (for translation validation)
 └── expect/                 # Golden files for output comparison
     ├── *.ast.expect       # Expected AST outputs
     └── *.output.expect    # Expected interpreter outputs
@@ -24,7 +34,9 @@ Tests the MLIR-to-AST transformation pipeline. Compares transformed AST against 
 Tests the extracted OCaml interpreter. Compares program output against golden files.
 
 ### 3. Oracle Testing (Pass Validation)
-Tests optimization passes by comparing execution outputs before/after optimization. Note: This is oracle testing, not formal translation validation (which requires Coq proofs).
+Tests optimization passes by comparing execution outputs before/after optimization.
+
+**Note**: Oracle tests are now in [`validation/oracle/`](../validation/) directory for better organization.
 
 ## Running Tests
 
@@ -67,19 +79,12 @@ dune test --verbose
    ```
 
 ### Oracle Test (Pass Validation)
-1. Create `test/example.mlir` (original program)
-2. Generate optimized version: `mlir-opt test/example.mlir -pass-pipeline='...' -o test/example.opt.mlir`
-3. Add both files to `dune` deps
-4. Add test case in `test_driver.ml`:
-   ```ocaml
-   make_translation_validation_test  (* naming will be updated *)
-     ~name:"Example optimization"
-     ~mlir_file:"example.mlir"
-     ~opt_mlir_file:(Some "example.opt.mlir")
-     ~pass_pipeline:"builtin.module(func.func(pass-name))"
-   ```
 
-See [Oracle Testing Guide](../docs/howto/translation-validation-testing.md) for details.
+Oracle tests are now organized in the [`validation/`](../validation/) directory.
+
+See:
+- [Validation README](../validation/README.md) for adding oracle tests
+- [Oracle Testing Guide](../docs/howto/translation-validation-testing.md) for detailed instructions
 
 ## Environment Variables
 

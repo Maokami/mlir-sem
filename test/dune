@@ -3,10 +3,10 @@
  (libraries driver alcotest mlir_sem_extracted)
  (deps
   (file simple_arith.mlir)
-  (file sccp_addi.mlir)
-  (file sccp_addi.opt.mlir)
-  (file sccp_branch.mlir)
-  (file sccp_branch.opt.mlir))
+  (file ../validation/oracle/sccp/sccp_addi.mlir)
+  (file ../validation/oracle/sccp/sccp_addi.opt.mlir)
+  (file ../validation/oracle/sccp/sccp_branch.mlir)
+  (file ../validation/oracle/sccp/sccp_branch.opt.mlir))
  (action
   (setenv
    MLIR_TEST_FILE
