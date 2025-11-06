@@ -140,9 +140,46 @@ Submit contributions via **Pull Requests only**:
 **Process**:
 1. Keep PR scope small and focused
 2. Ensure Definition of Done is satisfied
-3. Request **GitHub Copilot** review for every PR
-4. Use AI review as first pass, refine manually for rigor
-5. Merge only after CI passes and feedback is addressed
+3. Request AI reviews for every PR (Copilot, Gemini, Claude Code)
+4. Handle AI feedback based on priority (see below)
+5. Merge only after CI passes and critical feedback is addressed
+
+### AI Review Priority Guidelines
+
+When receiving reviews from multiple AI assistants, prioritize as follows:
+
+#### 🔴 **Critical (Immediate Action Required)**
+- Security vulnerabilities (command injection, data leaks, etc.)
+- Memory leaks or resource management issues
+- Logic errors that break functionality
+- Missing error handling for critical paths
+
+**Action**: Fix before merging, no exceptions.
+
+#### 🟡 **Important (Create Issue)**
+- Performance optimizations
+- Code refactoring suggestions
+- Additional test coverage recommendations
+- Documentation improvements
+- Non-critical error handling
+
+**Action**: Create GitHub issues for tracking, can merge if not blocking.
+
+#### 🟢 **Nice-to-have (Consider or Ignore)**
+- Style preferences
+- Alternative implementation suggestions
+- Minor optimizations
+- Verbose documentation requests
+- Overly defensive programming suggestions
+
+**Action**: Apply if trivial, otherwise ignore.
+
+#### Review Bot Characteristics
+- **GitHub Copilot**: Good at security and best practices
+- **Gemini**: Often suggests comprehensive refactoring
+- **Claude Code**: Focuses on correctness and edge cases
+
+**Note**: When reviews conflict, prioritize based on issue severity rather than source
 
 ## Checklist for New Dialect or Pass
 
