@@ -1,0 +1,20 @@
+(coq.theory
+ (name PropertyTests)
+ (package mlir-sem)
+ (theories MlirSem QuickChick)
+ (flags -w -notation-overridden))
+
+; Note: To enable these tests, install QuickChick:
+;   opam install coq-quickchick
+;
+; Then uncomment the extraction test below:
+;
+; (executable
+;  (name property_tests)
+;  (libraries quickchick)
+;  (modules property_tests))
+;
+; (test
+;  (name run_property_tests)
+;  (deps property_tests.exe)
+;  (action (run %{dep:property_tests.exe})))
