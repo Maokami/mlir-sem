@@ -76,6 +76,64 @@ let make_interpreter_execution_test ~name ~mlir_file ~expect_file =
       check string "Interpreter output should match golden file"
         expected_output result_output)
 
+(* Helper to run mlir-opt on a file *)
+let run_mlir_opt mlir_file_path pass_pipeline output_path =
+  let mlir_opt_path =
+    match Sys.getenv_opt "MLIR_OPT_PATH" with
+    | Some p -> p
+    | None -> "mlir-opt" (* Use PATH default *)
+  in
+  let command =
+    Printf.sprintf "%s %s -pass-pipeline='%s' -o %s"
+      mlir_opt_path mlir_file_path pass_pipeline output_path
+  in
+  let exit_code = Sys.command command in
+  if exit_code <> 0 then
+    Alcotest.fail (Printf.sprintf "mlir-opt failed with exit code %d" exit_code)
+
+(* Helper to run interpreter and get output *)
+let run_interpreter mlir_file_path =
+  let run_exe_path =
+    match Sys.getenv_opt "RUN_EXE_PATH" with
+    | Some p -> p
+    | None -> Alcotest.fail "RUN_EXE_PATH environment variable not set"
+  in
+  let command = Printf.sprintf "%s %s" run_exe_path mlir_file_path in
+  let ic = Unix.open_process_in command in
+  let result_output = input_line ic in
+  let status = Unix.close_process_in ic in
+  match status with
+  | Unix.WEXITED 0 -> result_output
+  | _ -> Alcotest.fail "Interpreter execution failed"
+
+(* Generic test case for oracle testing (pass validation) *)
+let make_translation_validation_test ~name ~mlir_file ~opt_mlir_file ~pass_pipeline =
+  test_case name `Quick (fun () ->
+      let original_path = get_mlir_test_file mlir_file () in
+      let optimized_path =
+        match opt_mlir_file with
+        | Some path -> get_mlir_test_file path ()
+        | None ->
+            (* Generate optimized file using mlir-opt *)
+            let temp_file = Filename.temp_file "mlir_opt" ".mlir" in
+            run_mlir_opt original_path pass_pipeline temp_file;
+            temp_file
+      in
+
+      (* Run both files through interpreter *)
+      let original_output = run_interpreter original_path in
+      let optimized_output = run_interpreter optimized_path in
+
+      (* Clean up temp file if we created one *)
+      (match opt_mlir_file with
+       | None -> Sys.remove optimized_path
+       | Some _ -> ());
+
+      (* Compare outputs *)
+      check string
+        (Printf.sprintf "Oracle test: %s should produce same output after optimization" name)
+        original_output optimized_output)
+
 (* The test suite *)
 let () =
   let () = Printexc.record_backtrace true in
@@ -107,5 +165,23 @@ let () =
             ~name:"Execute conditional branch (golden)"
             ~mlir_file:"cond_branch.mlir"
             ~expect_file:"cond_branch.output.expect";
+        ] );
+      ( "Oracle Testing",
+        [
+          make_translation_validation_test
+            ~name:"SCCP constant propagation with addi"
+            ~mlir_file:"sccp_addi.mlir"
+            ~opt_mlir_file:(Some "sccp_addi.opt.mlir")
+            ~pass_pipeline:"builtin.module(func.func(sccp))";
+          make_translation_validation_test
+            ~name:"SCCP with constant conditional branch"
+            ~mlir_file:"sccp_branch.mlir"
+            ~opt_mlir_file:(Some "sccp_branch.opt.mlir")
+            ~pass_pipeline:"builtin.module(func.func(sccp))";
+          make_translation_validation_test
+            ~name:"SCCP with addi (dynamically generated)"
+            ~mlir_file:"sccp_addi.mlir"
+            ~opt_mlir_file:None
+            ~pass_pipeline:"builtin.module(func.func(sccp))";
         ] );
     ]

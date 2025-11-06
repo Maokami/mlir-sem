@@ -2,7 +2,11 @@
  (name test_driver)
  (libraries driver alcotest mlir_sem_extracted)
  (deps
-  (file simple_arith.mlir))
+  (file simple_arith.mlir)
+  (file sccp_addi.mlir)
+  (file sccp_addi.opt.mlir)
+  (file sccp_branch.mlir)
+  (file sccp_branch.opt.mlir))
  (action
   (setenv
    MLIR_TEST_FILE
@@ -10,7 +14,10 @@
    (setenv
     RUN_EXE_PATH
     %{bin:driver_run}
-    (run %{exe:test_driver.exe} test))))
+    (setenv
+     MLIR_OPT_PATH
+     %{env:MLIR_OPT_PATH=mlir-opt}
+     (run %{exe:test_driver.exe} test)))))
  (flags
   (:standard
    -cclib
