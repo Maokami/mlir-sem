@@ -1,8 +1,11 @@
-(coq.theory
- (name PropertyTests)
- (package mlir-sem)
- (theories MlirSem QuickChick)
- (flags -w -notation-overridden))
+; Property tests require QuickChick to be installed
+; Install with: opam install coq-quickchick
+;
+; (coq.theory
+;  (name PropertyTests)
+;  (package mlir-sem)
+;  (theories MlirSem QuickChick)
+;  (flags -w -notation-overridden))
 
 ; Note: To enable these tests, install QuickChick:
 ;   opam install coq-quickchick
