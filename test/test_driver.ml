@@ -174,7 +174,7 @@ let () =
             ~opt_mlir_file:(Some "sccp_addi.opt.mlir")
             ~pass_pipeline:"builtin.module(func.func(sccp))";
           make_translation_validation_test
-            ~name:"SCCP with constant conditional branch"
+            ~name:"SCCP preserves semantics with constant condition (no DCE)"
             ~mlir_file:"sccp_branch.mlir"
             ~opt_mlir_file:(Some "sccp_branch.opt.mlir")
             ~pass_pipeline:"builtin.module(func.func(sccp))";

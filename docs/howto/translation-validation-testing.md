@@ -91,7 +91,7 @@ func.func @constant_prop_addi() -> i32 {
 
 Both programs return `30`, validation passes ✓
 
-### Example 2: Dead Branch Elimination
+### Example 2: Constant Condition (SCCP without DCE)
 
 **test/sccp_branch.mlir**:
 ```mlir
@@ -109,7 +109,9 @@ func.func @constant_branch(%arg0: i32) -> i32 {
 }
 ```
 
-SCCP determines that `%true` is always true, so `^bb2` is dead code. Both versions return `1` ✓
+**Important**: SCCP performs constant propagation but does NOT eliminate dead code. The optimized version still contains the dead branch `^bb2` and unused constants. However, both versions return `1` because the interpreter follows the constant condition correctly.
+
+**Note**: To actually remove dead code, combine SCCP with DCE: `-pass-pipeline='builtin.module(func.func(sccp,dce))'`
 
 ## Pass Pipeline Syntax
 

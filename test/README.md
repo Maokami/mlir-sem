@@ -93,7 +93,7 @@ See [Oracle Testing Guide](../docs/howto/translation-validation-testing.md) for 
 - ✅ Comparisons (cmpi)
 - ✅ Control flow (br, cond_br)
 - ✅ Function definitions and returns
-- ✅ SCCP optimization pass
+- ✅ SCCP optimization pass (constant propagation, semantic preservation)
 - ❌ Memory operations (memref dialect)
 - ❌ Loop optimizations (scf dialect)
 - ❌ Multiple functions in one module
