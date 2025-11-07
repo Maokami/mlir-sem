@@ -7,15 +7,15 @@
     have the same observable behavior (eutt - equivalence up to taus).
 *)
 
-Require Import MlirSem.Syntax.AST.
-Require Import MlirSem.Semantics.Interp.
-Require Import MlirSem.Semantics.Denotation.
-Require Import MlirSem.Utils.Tactics.
-Require Import MlirSem.Utils.Lemmas.
-Require Import ITree.ITree.
-Require Import ITree.Eq.Eq.
-Require Import ExtLib.Structures.Monad.
-Require Import List.
+From Stdlib Require Import List.
+From ITree Require Import ITree Eq.
+From ExtLib Require Import Structures.Monad.
+From MlirSem Require Import Syntax.AST.
+From MlirSem Require Import Semantics.Interp.
+From MlirSem Require Import Semantics.Denotation.
+From MlirSem Require Import Utils.Tactics.
+From MlirSem Require Import Utils.Lemmas.
+
 Import ListNotations.
 
 (** * Program Equivalence *)
@@ -27,14 +27,14 @@ Definition prog_equiv (p1 p2 : mlir_program) : Prop :=
     match run_program p1 func_name, run_program p2 func_name with
     | Some t1, Some t2 =>
         (* The trees are equivalent up to taus *)
-        eutt eq t1 t2
+        eutt Logic.eq t1 t2
     | None, None => True  (* Both programs lack the function *)
     | _, _ => False       (* One has the function, the other doesn't *)
     end.
 
 (** Block-level equivalence (useful for local transformations) *)
-Definition block_equiv (b1 b2 : block) (st : interpreter_state) : Prop :=
-  eutt eq (denote_block b1 st) (denote_block b2 st).
+Definition block_equiv (b1 b2 : block) : Prop :=
+  eutt Logic.eq (denote_block (block_ops b1)) (denote_block (block_ops b2)).
 
 (** * Common Optimization Patterns *)
 

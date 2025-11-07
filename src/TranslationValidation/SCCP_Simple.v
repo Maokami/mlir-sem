@@ -4,17 +4,17 @@
     example produces the same results as the original.
 *)
 
-Require Import MlirSem.Syntax.AST.
-Require Import MlirSem.Semantics.Interp.
-Require Import MlirSem.Semantics.Denotation.
-Require Import MlirSem.TranslationValidation.Framework.
-Require Import MlirSem.Utils.Tactics.
-Require Import ITree.ITree.
-Require Import ITree.Eq.Eq.
-Require Import ZArith.
-Require Import List.
+From Stdlib Require Import ZArith List String.
+From ITree Require Import ITree Eq.
+From MlirSem Require Import Syntax.AST.
+From MlirSem Require Import Semantics.Interp.
+From MlirSem Require Import Semantics.Denotation.
+From MlirSem Require Import TranslationValidation.Framework.
+From MlirSem Require Import Utils.Tactics.
+
 Import ListNotations.
 Open Scope Z_scope.
+Open Scope string_scope.
 
 (* Import the generated definitions *)
 (* Note: In a real setup, we'd import test/TranslationValidation/sccp_simple.v
@@ -55,7 +55,7 @@ Theorem sccp_simple_correct :
   prog_equiv program_before program_after.
 Proof.
   unfold prog_equiv.
-  intros func_name args.
+  intros func_name.
 
   (* Both programs have only "main" function *)
   destruct (string_dec func_name "main").
@@ -83,32 +83,20 @@ Proof.
     (* Both programs only have "main", so both return None *)
     simpl.
     destruct (string_dec func_name "main"); try contradiction.
-    reflexivity.
+    (* Goal should be True *)
+    trivial.
 
 Admitted. (* TODO: Complete the proof *)
 
-(** Lemma: The computation steps in program_before produce 130 *)
-Lemma before_computes_130 :
-  forall st,
-    exists st',
-      denote_instrs
-        [(Op ["%0"] (Arith_Constant 10 (Integer 64)));
-         (Op ["%1"] (Arith_Constant 20 (Integer 64)));
-         (Op ["%2"] (Arith_AddI "%0" "%1" (Integer 64)));
-         (Op ["%3"] (Arith_Constant 100 (Integer 64)));
-         (Op ["%4"] (Arith_AddI "%2" "%3" (Integer 64)))]
-        st ≈ Ret (st', [130]).
-Proof.
-  (* TODO: Step through the computation *)
-Admitted.
+(** Helper lemmas for proving computation equivalence *)
+(* TODO: Define these lemmas when we have instruction-level semantics helpers
+   These would help prove that the computations produce the same result.
 
-(** Lemma: The single instruction in program_after produces 130 *)
+Lemma before_computes_130 :
+  (* The computation steps in program_before produce 130 *)
+  ...
+
 Lemma after_computes_130 :
-  forall st,
-    exists st',
-      denote_instrs
-        [(Op ["%0"] (Arith_Constant 130 (Integer 64)))]
-        st ≈ Ret (st', [130]).
-Proof.
-  (* TODO: This should be straightforward *)
-Admitted.
+  (* The single instruction in program_after produces 130 *)
+  ...
+*)
