@@ -140,13 +140,26 @@ Submit contributions via **Pull Requests only**:
 **Process**:
 1. Keep PR scope small and focused
 2. Ensure Definition of Done is satisfied
-3. Request AI reviews for every PR (Copilot, Gemini, Claude Code)
-4. Handle AI feedback based on priority (see below)
-5. Merge only after CI passes and critical feedback is addressed
+3. Handle AI feedback based on priority (see below)
+4. Merge only after CI passes and critical feedback is addressed
 
-### AI Review Priority Guidelines
+### AI Review Configuration (Recommended)
 
-When receiving reviews from multiple AI assistants, prioritize as follows:
+To prevent review fatigue, we recommend using **only 2 AI reviewers**:
+
+- ✅ **GitHub Copilot** - Enable (security, best practices)
+- ✅ **Claude Code** - Use manually when needed (correctness, edge cases)
+- ⛔ **Gemini Code Assist** - Disable (verbose, over-suggests refactoring)
+
+**Rationale**: Three bots generate too much feedback, slowing down development. Two focused reviewers provide better signal-to-noise ratio.
+
+**To disable Gemini**: Repository Settings → Code security and analysis → Disable Gemini Code Assist
+
+### AI Review Policy
+
+**Review Frequency**: AI bots should review **only once when PR is first created** (draft or ready). No re-reviews on subsequent commits unless explicitly re-requested.
+
+**Handling Review Feedback**:
 
 #### 🔴 **Critical (Immediate Action Required)**
 - Security vulnerabilities (command injection, data leaks, etc.)
@@ -154,32 +167,27 @@ When receiving reviews from multiple AI assistants, prioritize as follows:
 - Logic errors that break functionality
 - Missing error handling for critical paths
 
-**Action**: Fix before merging, no exceptions.
+**Action**: Fix immediately before merging. No exceptions.
 
-#### 🟡 **Important (Create Issue)**
+#### 🟡 **Important (Track via Issue)**
 - Performance optimizations
 - Code refactoring suggestions
 - Additional test coverage recommendations
 - Documentation improvements
 - Non-critical error handling
 
-**Action**: Create GitHub issues for tracking, can merge if not blocking.
+**Action**: Create GitHub issue for tracking. Merge if not blocking.
 
-#### 🟢 **Nice-to-have (Consider or Ignore)**
-- Style preferences
+#### 🟢 **Nice-to-have (Apply if Trivial, Otherwise Ignore)**
+- Style preferences (< 1 minute to fix)
 - Alternative implementation suggestions
 - Minor optimizations
 - Verbose documentation requests
 - Overly defensive programming suggestions
 
-**Action**: Apply if trivial, otherwise ignore.
+**Action**: Fix only if trivial (< 2 minutes). Otherwise ignore.
 
-#### Review Bot Characteristics
-- **GitHub Copilot**: Good at security and best practices
-- **Gemini**: Often suggests comprehensive refactoring
-- **Claude Code**: Focuses on correctness and edge cases
-
-**Note**: When reviews conflict, prioritize based on issue severity rather than source
+**Conflict Resolution**: When reviews conflict, prioritize based on severity (🔴 > 🟡 > 🟢), not reviewer source.
 
 ## Checklist for New Dialect or Pass
 
