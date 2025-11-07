@@ -46,3 +46,7 @@
    "-lLLVM-C"
    -cclib
    "-lLLVM")))
+
+(test
+ (name test_coq_exporter)
+ (libraries driver alcotest mlir_sem_extracted))

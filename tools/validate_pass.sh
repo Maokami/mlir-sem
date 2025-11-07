@@ -57,7 +57,7 @@ Theorem PASS_NAME_correct :
   prog_equiv program_before program_after.
 Proof.
   unfold prog_equiv.
-  intros func_name args.
+  intros func_name.
 
   (* Analyze both programs *)
   simpl.
