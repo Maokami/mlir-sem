@@ -212,7 +212,7 @@ run_tree(itree)
 
 ---
 
-## 3. COQA EXTRACTION PROCESS
+## 3. Coq EXTRACTION PROCESS
 
 ### 3.1 Extraction Configuration
 

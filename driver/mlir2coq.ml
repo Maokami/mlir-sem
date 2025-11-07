@@ -4,10 +4,15 @@ open Driver.Bindings
 open Driver.Coq_exporter
 
 let read_file filename =
-  let ch = open_in filename in
-  let s = really_input_string ch (in_channel_length ch) in
-  close_in ch;
-  s
+  try
+    let ch = open_in filename in
+    Fun.protect
+      ~finally:(fun () -> close_in ch)
+      (fun () -> really_input_string ch (in_channel_length ch))
+  with
+  | Sys_error msg ->
+      Printf.eprintf "Error reading file %s: %s\n" filename msg;
+      exit 1
 
 let parse_mlir ctx mlir_string =
   let c_module = module_create_parse ctx mlir_string in

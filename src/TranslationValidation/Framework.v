@@ -43,12 +43,12 @@ Definition block_equiv (b1 b2 : block) : Prop :=
 
 (** Dead code elimination preserves semantics if removed code has no effects *)
 (* TODO: Define this lemma when we have instruction-level semantics
-Lemma dce_sound : ...
+Lemma dce_sound : (* definition to be added *)
 *)
 
 (** Constant propagation is sound *)
 (* TODO: Define this lemma when we have value substitution helpers
-Lemma const_prop_sound : ...
+Lemma const_prop_sound : (* definition to be added *)
 *)
 
 (** * Validation Tactics *)

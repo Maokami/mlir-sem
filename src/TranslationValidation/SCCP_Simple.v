@@ -94,9 +94,11 @@ Admitted. (* TODO: Complete the proof *)
 
 Lemma before_computes_130 :
   (* The computation steps in program_before produce 130 *)
-  ...
+  (* computation steps for program_before producing 130 to be specified here *)
+  True.
 
 Lemma after_computes_130 :
   (* The single instruction in program_after produces 130 *)
-  ...
+  (* computation steps for program_after producing 130 to be specified here *)
+  True.
 *)
