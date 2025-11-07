@@ -1,6 +1,6 @@
 (library
  (name driver)
- (modules bindings transformer ast_printer coq_exporter)
+ (modules bindings transformer ast_printer)
  (libraries ctypes ctypes.foreign mlir_sem_extracted zarith)
  (wrapped true))
 
@@ -8,40 +8,6 @@
  (name run)
  (public_name driver_run)
  (modules run)
- (libraries driver mlir_sem_extracted)
- (flags
-  (:standard
-   -cclib
-   "-L%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}"
-   -cclib
-   "-Wl,-rpath,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}"
-   -cclib
-   "-Wl,-export_dynamic"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIIR.a"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIFunc.a"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIArith.a"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIControlFlow.a"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIRegisterEverything.a"
-   -cclib
-   "-lc++"
-   -cclib
-   "-lc++abi"
-   -cclib
-   "-lMLIR"
-   -cclib
-   "-lLLVM-C"
-   -cclib
-   "-lLLVM")))
-
-(executable
- (name mlir2coq)
- (public_name mlir2coq)
- (modules mlir2coq)
  (libraries driver mlir_sem_extracted)
  (flags
   (:standard
