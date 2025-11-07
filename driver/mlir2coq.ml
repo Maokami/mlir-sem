@@ -2,6 +2,7 @@
 open Driver.Transformer
 open Driver.Bindings
 open Driver.Coq_exporter
+open Ctypes
 
 let read_file filename =
   try
@@ -21,7 +22,11 @@ let parse_mlir ctx mlir_string =
   else
     Fun.protect
       ~finally:(fun () -> module_destroy c_module)
-      (fun () -> Ok (transform_module c_module))
+      (fun () ->
+        try
+          Ok (transform_module c_module)
+        with e ->
+          Error (Printf.sprintf "Transformation failed: %s" (Printexc.to_string e)))
 
 let process_single_file ctx input_file output_file prog_name =
   let file_content = read_file input_file in
@@ -59,6 +64,19 @@ let usage () =
   Printf.eprintf "  %s --pair <before.mlir> <after.mlir> <output.v>  - Convert translation validation pair\n" Sys.argv.(0);
   exit 1
 
+let register_required_dialects ctx =
+  let dialects = [
+    ("func", get_func_dialect ());
+    ("arith", get_arith_dialect ());
+    ("cf", get_cf_dialect ())
+  ] in
+  List.iter (fun (name, dialect) ->
+    if is_null dialect then
+      failwith (Printf.sprintf "Failed to load %s dialect" name)
+    else
+      register_dialect dialect ctx
+  ) dialects
+
 let main () =
   let argc = Array.length Sys.argv in
   if argc < 3 then usage ()
@@ -67,10 +85,8 @@ let main () =
     Fun.protect
       ~finally:(fun () -> context_destroy ctx)
       (fun () ->
-        (* Register dialects *)
-        register_dialect (get_func_dialect ()) ctx;
-        register_dialect (get_arith_dialect ()) ctx;
-        register_dialect (get_cf_dialect ()) ctx;
+        (* Register dialects with validation *)
+        register_required_dialects ctx;
 
         let success =
           if Sys.argv.(1) = "--pair" then
