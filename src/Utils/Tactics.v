@@ -5,9 +5,11 @@
  * semantic equivalence, and program transformations.
  *)
 
-From Stdlib Require Import ZArith List String.
-From ITree Require Import ITree.
+From Stdlib Require Import ZArith List String Lia.
+From ITree Require Import ITree Eq.
 From Paco Require Import paco.
+From MlirSem Require Import Syntax.AST.
+From MlirSem Require Import Semantics.Denotation.
 
 Import ListNotations.
 Import ITreeNotations.
@@ -51,6 +53,47 @@ Ltac itree_simp :=
   try reflexivity;
   auto.
 
+(*
+ * unfold_denote: Unfold all denotation functions in the goal.
+ * Useful for exposing the ITree structure of programs.
+ *)
+Ltac unfold_denote :=
+  unfold denote_func, denote_block,
+         denote_general_op, denote_terminator in *;
+  simpl.
+
+(*
+ * eutt_refl: Reflexivity for eutt (equivalence up to taus).
+ *)
+Ltac eutt_refl :=
+  reflexivity.
+
+(*
+ * eutt_sym: Apply symmetry of eutt.
+ *)
+Ltac eutt_sym :=
+  symmetry.
+
+(*
+ * eutt_trans H: Apply transitivity of eutt using hypothesis H.
+ *)
+Ltac eutt_trans H :=
+  etransitivity; [| apply H].
+
+(*
+ * rewrite_eutt H: Rewrite using eutt equivalence H.
+ * Works in both directions and under bind.
+ *)
+Ltac rewrite_eutt H :=
+  rewrite H.
+
+(*
+ * itree_case: Case analysis on ITree structure (Ret, Tau, Vis).
+ * Simplifies goals based on the ITree constructor.
+ *)
+Ltac itree_case t :=
+  destruct (observe t); simpl; auto.
+
 (* ========================================================================= *)
 (* Case Analysis Tactics *)
 (* ========================================================================= *)
@@ -77,6 +120,28 @@ Ltac forward H :=
   end.
 
 (* ========================================================================= *)
+(* Option Type Reasoning *)
+(* ========================================================================= *)
+
+(*
+ * destr_option o: Destruct an option value and handle both cases.
+ * Automatically simplifies None cases and introduces the value in Some cases.
+ *)
+Ltac destr_option o :=
+  destruct o as [?val|]; simpl; auto; try discriminate.
+
+(*
+ * match_option: Simplify match expressions on options in the goal.
+ *)
+Ltac match_option :=
+  repeat match goal with
+  | |- context[match ?o with Some _ => _ | None => _ end] =>
+      destruct o; simpl; auto
+  | H : context[match ?o with Some _ => _ | None => _ end] |- _ =>
+      destruct o; simpl in H; auto
+  end.
+
+(* ========================================================================= *)
 (* List Reasoning *)
 (* ========================================================================= *)
 
@@ -85,6 +150,14 @@ Ltac forward H :=
  *)
 Ltac list_induction l :=
   induction l as [| x xs IHxs]; simpl; auto.
+
+(*
+ * list_length_eq: Prove two lists have equal length using arithmetic.
+ *)
+Ltac list_length_eq :=
+  repeat rewrite length_map;  (* Use standard library lemma *)
+  try reflexivity;
+  try lia.
 
 (* ========================================================================= *)
 (* Automation Configuration *)
@@ -110,3 +183,26 @@ Ltac mlir_auto :=
   simpl_goal;
   try itree_simp;
   auto with mlir_sem.
+
+(* ========================================================================= *)
+(* Debugging and Inspection *)
+(* ========================================================================= *)
+
+(*
+ * show_goal: Display the current goal in a readable format.
+ * Useful for debugging complex ITree goals.
+ *)
+Ltac show_goal :=
+  match goal with
+  | |- ?G => idtac "Current goal:" G
+  end.
+
+(*
+ * show_context: Display all hypotheses.
+ * Useful for understanding the proof state.
+ *)
+Ltac show_context :=
+  match goal with
+  | H : ?T |- _ => idtac "Hypothesis:" H ":" T; fail
+  | _ => idtac "No more hypotheses"
+  end.

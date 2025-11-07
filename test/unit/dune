@@ -1,0 +1,6 @@
+(include_subdirs no)
+
+(coq.theory
+ (name TestInfrastructure)
+ (modules test_infrastructure)
+ (theories MlirSem Stdlib Paco ITree ExtLib))

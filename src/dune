@@ -15,6 +15,7 @@
   Theory.Correctness
   TranslationValidation.Framework
   TranslationValidation.SCCP_Simple
+  TranslationValidation.Examples.ConstantFold_Addi
   Utils.Tactics
   Utils.Lemmas
   Main)
