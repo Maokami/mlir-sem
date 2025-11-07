@@ -22,82 +22,68 @@ Import ListNotations.
 
 (** Two programs are equivalent if their main functions produce
     the same results for all inputs *)
-Definition prog_equiv (p1 p2 : mlir_module) : Prop :=
-  forall func_name args,
+Definition prog_equiv (p1 p2 : mlir_program) : Prop :=
+  forall func_name,
     match run_program p1 func_name, run_program p2 func_name with
     | Some t1, Some t2 =>
-        (* The trees are equivalent up to taus when given the same arguments *)
-        eutt eq (interp_state t1 (init_state args))
-                (interp_state t2 (init_state args))
+        (* The trees are equivalent up to taus *)
+        eutt eq t1 t2
     | None, None => True  (* Both programs lack the function *)
     | _, _ => False       (* One has the function, the other doesn't *)
     end.
 
-(** Weaker notion: function-level equivalence *)
-Definition func_equiv (f1 f2 : mlir_function) : Prop :=
-  forall args,
-    eutt eq (denote_function f1 args) (denote_function f2 args).
-
-(** Even weaker: basic block equivalence (useful for local transformations) *)
-Definition block_equiv (b1 b2 : basic_block) (st : interpreter_state) : Prop :=
+(** Block-level equivalence (useful for local transformations) *)
+Definition block_equiv (b1 b2 : block) (st : interpreter_state) : Prop :=
   eutt eq (denote_block b1 st) (denote_block b2 st).
 
 (** * Common Optimization Patterns *)
 
+(** These lemmas provide templates for common optimization correctness proofs.
+    They will be proven once we have the necessary helper functions and tactics. *)
+
 (** Dead code elimination preserves semantics if removed code has no effects *)
-Lemma dce_sound : forall instrs dead_instr rest st,
-  (* If dead_instr doesn't modify state or have side effects *)
-  (forall st', denote_instr dead_instr st' ≈ Ret (st', [])) ->
-  (* Then removing it preserves semantics *)
-  denote_instrs (instrs ++ [dead_instr] ++ rest) st ≈
-  denote_instrs (instrs ++ rest) st.
-Proof.
-  (* TODO: Prove using ITree properties *)
-Admitted.
+(* TODO: Define this lemma when we have instruction-level semantics
+Lemma dce_sound : ...
+*)
 
 (** Constant propagation is sound *)
-Lemma const_prop_sound : forall var const_val instrs st,
-  (* If var is always equal to const_val *)
-  get_value st var = Some const_val ->
-  (* Then substituting var with const_val preserves semantics *)
-  denote_instrs (subst_var_with_const instrs var const_val) st ≈
-  denote_instrs instrs st.
-Proof.
-  (* TODO: Prove by induction on instructions *)
-Admitted.
+(* TODO: Define this lemma when we have value substitution helpers
+Lemma const_prop_sound : ...
+*)
 
 (** * Validation Tactics *)
 
 (** Tactic for simplifying program equivalence goals *)
 Ltac tv_simp :=
-  unfold prog_equiv, func_equiv, block_equiv in *;
-  simpl_goal;
+  unfold prog_equiv, block_equiv in *;
+  simpl;
   try match goal with
   | [ |- eutt _ _ _ ] => try reflexivity
   end.
 
-(** Tactic for case analysis on control flow *)
-Ltac tv_case_cf :=
-  match goal with
-  | [ |- context[denote_cf_op ?op ?st] ] =>
-    destruct op; simpl; try itree_auto
-  end.
+(** Tactic for introducing program equivalence *)
+Ltac tv_intro :=
+  unfold prog_equiv;
+  intros.
+
+(** Tactic for stepping through program execution *)
+Ltac tv_step :=
+  simpl; try reflexivity.
+
+(** Automated tactic for simple cases *)
+Ltac tv_auto :=
+  tv_intro; tv_simp; try tv_step.
 
 (** * Helper Lemmas for Common Cases *)
 
-(** Arithmetic operations with same operands produce same results *)
-Lemma arith_deterministic : forall op args st,
-  deterministic (denote_arith_op op args st).
-Proof.
-  (* TODO: Prove for each arithmetic operation *)
-Admitted.
+(** These will be proven as we develop the framework further.
+    For now, they serve as documentation of planned lemmas. *)
 
-(** Control flow with same condition takes same branch *)
-Lemma cf_deterministic : forall cond true_bb false_bb st,
-  deterministic (denote_cf_cond_br cond true_bb false_bb st).
-Proof.
-  (* TODO: Prove using value comparison decidability *)
-Admitted.
+(* TODO: Add helper lemmas for:
+   - Arithmetic determinism
+   - Control flow determinism
+   - State preservation properties
+*)
 
 (** * Validation Workflow *)
 

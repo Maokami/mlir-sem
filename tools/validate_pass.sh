@@ -29,7 +29,7 @@ cp "$INPUT_FILE" "$BEFORE_FILE"
 
 # Apply optimization pass
 echo "2. Applying $PASS_NAME pass..."
-mlir-opt "--$PASS_NAME" "$BEFORE_FILE" > "$AFTER_FILE" 2>/dev/null || {
+mlir-opt "--$PASS_NAME" "$BEFORE_FILE" > "$AFTER_FILE" || {
     echo "Error: Failed to apply $PASS_NAME pass"
     echo "Make sure mlir-opt is installed and the pass name is correct"
     exit 1
@@ -67,7 +67,7 @@ Proof.
 Admitted.
 EOF
 
-sed -i '' "s/PASS_NAME/$PASS_NAME/g" "$PROOF_FILE"
+sed "s/PASS_NAME/$PASS_NAME/g" "$PROOF_FILE" > "$PROOF_FILE.tmp" && mv "$PROOF_FILE.tmp" "$PROOF_FILE"
 
 echo "5. Generated proof template: $PROOF_FILE"
 echo ""

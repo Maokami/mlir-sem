@@ -151,7 +151,7 @@ Used to verify parser output matches expected AST structure.
 ```ocaml
 let rec run_tree (tree : itree) : mlir_value list option =
   match Interp.observe tree with
-  | RetF state_and_result -> Some result_vals  (* Success *)
+  | RetF (_, result_vals) -> Some result_vals  (* Success *)
   | TauF t -> run_tree t                        (* Tau/silent step *)
   | VisF (event, k) ->
       match event with
@@ -479,8 +479,8 @@ Step 1: Parse both using MLIR C API
         optimized.mlir ──[bindings/transformer]──> AST₂ : mlir_program
 
 Step 2: Coq proof of equivalence
-        Goal: denote_program AST₁ ≈ denote_program AST₂
-        Proof: By ITree bisimulation using ISem framework
+        Goal: prog_equiv AST₁ AST₂
+        Proof: By ITree bisimulation (eutt) of run_program outputs
 
 Step 3: Extract proof to OCaml (if needed)
         Extract witness to demonstrate equivalence

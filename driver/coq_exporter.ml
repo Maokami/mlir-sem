@@ -133,27 +133,37 @@ let mlir_program_to_coq (name : string) (prog : mlir_program) : string =
 
 (* Export a program to a Coq file *)
 let export_to_coq_file (filename : string) (prog_name : string) (prog : mlir_program) =
-  let oc = open_out filename in
-  fprintf oc "(* Auto-generated from MLIR by coq_exporter.ml *)\n";
-  fprintf oc "Require Import MlirSem.Syntax.AST.\n";
-  fprintf oc "Require Import ZArith.\n";
-  fprintf oc "Open Scope Z_scope.\n\n";
-  fprintf oc "%s\n" (mlir_program_to_coq prog_name prog);
-  close_out oc;
-  printf "Exported Coq definition to %s\n" filename
+  try
+    let oc = open_out filename in
+    fprintf oc "(* Auto-generated from MLIR by coq_exporter.ml *)\n";
+    fprintf oc "Require Import MlirSem.Syntax.AST.\n";
+    fprintf oc "Require Import ZArith.\n";
+    fprintf oc "Open Scope Z_scope.\n\n";
+    fprintf oc "%s\n" (mlir_program_to_coq prog_name prog);
+    close_out oc;
+    printf "Exported Coq definition to %s\n" filename
+  with
+  | Sys_error msg ->
+      eprintf "Error writing to file %s: %s\n" filename msg;
+      exit 1
 
 (* Export two programs for translation validation *)
 let export_translation_pair ~before_file ~after_file ~before_name ~after_name
     ~before_prog ~after_prog ~output_file =
-  let oc = open_out output_file in
-  fprintf oc "(* Auto-generated translation validation pair *)\n";
-  fprintf oc "Require Import MlirSem.Syntax.AST.\n";
-  fprintf oc "Require Import ZArith.\n";
-  fprintf oc "Open Scope Z_scope.\n\n";
-  fprintf oc "(* Original program from: %s *)\n" before_file;
-  fprintf oc "%s\n" (mlir_program_to_coq before_name before_prog);
-  fprintf oc "(* Optimized program from: %s *)\n" after_file;
-  fprintf oc "%s\n" (mlir_program_to_coq after_name after_prog);
-  fprintf oc "(* End of auto-generated definitions *)\n";
-  close_out oc;
-  printf "Exported translation validation pair to %s\n" output_file
+  try
+    let oc = open_out output_file in
+    fprintf oc "(* Auto-generated translation validation pair *)\n";
+    fprintf oc "Require Import MlirSem.Syntax.AST.\n";
+    fprintf oc "Require Import ZArith.\n";
+    fprintf oc "Open Scope Z_scope.\n\n";
+    fprintf oc "(* Original program from: %s *)\n" before_file;
+    fprintf oc "%s\n" (mlir_program_to_coq before_name before_prog);
+    fprintf oc "(* Optimized program from: %s *)\n" after_file;
+    fprintf oc "%s\n" (mlir_program_to_coq after_name after_prog);
+    fprintf oc "(* End of auto-generated definitions *)\n";
+    close_out oc;
+    printf "Exported translation validation pair to %s\n" output_file
+  with
+  | Sys_error msg ->
+      eprintf "Error writing to file %s: %s\n" output_file msg;
+      exit 1
