@@ -186,9 +186,11 @@ Translation validation tests are automatically included in the CI pipeline. Ensu
 4. **Single-function tests**: Multi-function programs not yet fully tested
 5. **No state**: Tests without memory/state operations only
 
-### Future Work: True Translation Validation
+### True Translation Validation (Now Implemented!)
 
-True translation validation requires proving semantic equivalence in Coq, similar to the [Alive2](https://github.com/AliveToolkit/alive2) project for LLVM. The workflow would be:
+**Status**: Translation validation framework is now available for proving semantic equivalence in Coq, similar to the [Alive2](https://github.com/AliveToolkit/alive2) project for LLVM.
+
+The workflow:
 
 ```
 input.mlir  ──parse──> AST₁ ─┐
@@ -196,56 +198,113 @@ input.mlir  ──parse──> AST₁ ─┐
 output.mlir ──parse──> AST₂ ─┘
 ```
 
+**Quick Start with `validate_pass.sh`**:
+
+```bash
+# Generate Coq definitions and proof template for a pass
+./tools/validate_pass.sh sccp input.mlir output/
+
+# This creates:
+# - output/before.mlir (copy of input)
+# - output/after.mlir (optimized version)
+# - output/sccp_validation.v (Coq definitions)
+# - output/sccp_proof.v (proof template)
+```
+
+**Manual Workflow**:
+
+```bash
+# 1. Convert MLIR to Coq definitions
+dune exec mlir2coq -- --pair before.mlir after.mlir validation.v
+
+# 2. Write proof in Coq
+# See src/TranslationValidation/SCCP_Simple.v for example
+
+# 3. Add to build system
+# Update src/dune to include your proof file
+
+# 4. Verify
+dune build
+```
+
 **Key differences from oracle testing**:
 
-| Aspect | Oracle Testing (Current) | Translation Validation (Future) |
-|--------|--------------------------|----------------------------------|
+| Aspect | Oracle Testing | Translation Validation |
+|--------|----------------|------------------------|
 | **Scope** | Specific test inputs | All possible executions |
 | **Method** | Execute & compare outputs | Prove semantic equivalence |
 | **Guarantee** | Bug detection | Correctness proof |
-| **Location** | OCaml test driver | Coq theorems |
-| **Automation** | Fully automatic | Semi-automatic (tactics) |
+| **Location** | OCaml test driver | Coq theorems in `src/TranslationValidation/` |
+| **Automation** | Fully automatic | Semi-automatic (tactics + manual proof) |
+| **Tool** | `test_driver.ml` | `mlir2coq` + Coq proofs |
 
-**Implementation approach**:
+**Current implementation details**:
 
-1. **Parsing**: Convert MLIR text to our Coq AST definitions
-2. **Semantic equivalence**: Use ITree bisimulation (`eutt`, `eqit`) to state equivalence
-3. **Proof structure**: One Coq file per optimization pass (e.g., `src/Theory/SCCP_correct.v`)
-4. **Automation**: Develop tactics for common proof patterns
-5. **Organization**: Not in `test/` but in `src/Theory/` or `src/Pass/`
+1. **MLIR to Coq conversion**: `mlir2coq` tool converts MLIR text files to Coq AST definitions
+   - Reads MLIR via MLIR C API
+   - Exports to Coq format using `driver/coq_exporter.ml`
+   - Unit tests verify conversion correctness
+
+2. **Semantic equivalence framework**: `src/TranslationValidation/Framework.v`
+   - Defines `prog_equiv` using ITree bisimulation (`eutt Logic.eq`)
+   - Provides tactics: `tv_simp`, `tv_step`, `tv_auto`
+   - Foundation for proving optimization correctness
+
+3. **Example proof**: `src/TranslationValidation/SCCP_Simple.v`
+   - Demonstrates validation workflow
+   - Currently admitted (see [Issue #20](https://github.com/Maokami/mlir-sem/issues/20))
+   - Template for future proofs
+
+4. **Automation script**: `tools/validate_pass.sh`
+   - End-to-end workflow automation
+   - Generates Coq definitions and proof templates
+   - Shell-portable (tested on macOS and Linux)
 
 **Example proof structure**:
 
 ```coq
-(* src/Theory/SCCP_correct.v *)
-Require Import Semantics.Core.
-Require Import Pass.SCCP.
+(* src/TranslationValidation/SCCP_Simple.v *)
+Require Import MlirSem.TranslationValidation.Framework.
 
-Theorem sccp_preserves_semantics :
-  forall (original optimized : program),
-    sccp original = optimized ->
-    eutt (semantics original) (semantics optimized).
+Definition program_before : mlir_program := ...
+Definition program_after : mlir_program := ...
+
+Theorem sccp_simple_correct :
+  prog_equiv program_before program_after.
 Proof.
-  (* ... proof using ITree tactics ... *)
-Qed.
+  unfold prog_equiv.
+  intros func_name.
+  (* Proof using ITree tactics and eutt equivalence *)
+  (* Currently admitted - see Issue #20 *)
+Admitted.
 ```
 
-**This is a major undertaking** and requires:
-- Implementing optimization passes in Coq (not just testing external `mlir-opt`)
-- Developing proof automation tactics
-- Potentially extracting verified optimizers
+**Both approaches complement each other**:
 
-For now, oracle testing serves as:
-1. Bug detection during development
-2. Regression testing
-3. Specification by example (test cases can guide formal proofs)
+- **Oracle testing**: Fast feedback during development, regression detection
+- **Translation validation**: Formal correctness guarantees for critical optimizations
+
+**Recommended workflow**:
+
+1. Start with oracle tests for rapid development
+2. Add translation validation proofs for mission-critical passes
+3. Use oracle test cases to guide formal proof structure
 
 ### Other Future Enhancements
 
-1. **Property-based testing**: Generate random programs and validate optimizations (QuickChick)
-2. **More dialect support**: memref, scf, affine, etc.
-3. **MLIR test suite integration**: Port relevant tests from LLVM project
-4. **Dead code detection**: Flag when optimized code has unused definitions
+1. **Complete SCCP_Simple proof**: Finish the admitted proof ([Issue #20](https://github.com/Maokami/mlir-sem/issues/20))
+2. **Proof automation**: Develop more tactics for common optimization patterns
+3. **Property-based testing**: Generate random programs and validate optimizations (QuickChick)
+4. **More dialect support**: memref, scf, affine, etc.
+5. **MLIR test suite integration**: Port relevant tests from LLVM project
+6. **Dead code detection**: Flag when optimized code has unused definitions
+
+### Related Documentation
+
+- **ADR-0001**: [Translation Validation Framework](../adr/ADR-0001-translation-validation-framework.md) - Architectural decisions
+- **ADR-0002**: [Hybrid Validation Strategy](../adr/ADR-0002-hybrid-validation-strategy.md) - Combining oracle and formal validation
+- **Framework.v**: `src/TranslationValidation/Framework.v` - Core definitions and tactics
+- **Issue #20**: [Complete SCCP_Simple proof](https://github.com/Maokami/mlir-sem/issues/20) - Track progress on first complete proof
 
 ## Troubleshooting
 

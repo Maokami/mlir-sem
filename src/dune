@@ -13,6 +13,8 @@
   Semantics.Denotation
   Semantics.Interp
   Theory.Correctness
+  TranslationValidation.Framework
+  TranslationValidation.SCCP_Simple
   Utils.Tactics
   Utils.Lemmas
   Main)
