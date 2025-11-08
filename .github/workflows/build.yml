@@ -36,6 +36,8 @@ jobs:
           opam install -y coq-ext-lib.0.13.0
           opam install -y coq-itree.5.2.1
           opam install -y coq-paco.4.2.3
+          opam install -y alcotest
+          opam install -y ctypes-foreign
 
       - name: Build project
         run: |
