@@ -224,3 +224,162 @@ Mark slow tactics separately in CI for efficient testing.
   - First extracted reference interpreter
   - First verified optimization pass
 - Keep it lightweight for coordination and visibility
+
+## Proof Development Workflow
+
+### Golden Rule: Type-Check Before Admitting
+
+**Never use `admit` without verifying types are correct.** Type errors hidden by `admit` cause confusing build failures later.
+
+### Required Checklist Before Admitting
+
+Before writing `admit`, you **MUST**:
+
+1. ✅ **Run `intros`** - Ensure all quantified variables type-check
+2. ✅ **Unfold key definitions** - At least the main concepts
+3. ✅ **Check event constructors** - Use explicit type applications:
+   ```coq
+   (* WRONG - will fail later *)
+   trigger (inl1 (LocalWrite var value))
+
+   (* CORRECT *)
+   trigger (inl1 (@LocalWrite string mlir_value var value))
+   ```
+4. ✅ **Build immediately** - Run `dune build` to catch errors early
+5. ✅ **Document TODO** - Explain what's needed to complete the proof
+
+### TODO Comment Template
+
+Use this template for all admitted proofs:
+
+```coq
+Lemma my_lemma : forall (x : T), property.
+Proof.
+  intros x.
+  unfold key_definition.
+  (* TODO: Complete this proof
+     SIGNATURE CHECKED: ✓ (intros succeeded)
+     IMPORTS NEEDED: Module1, Module2
+     KEY LEMMAS: lemma1, lemma2, lemma3
+     STRATEGY: Brief description of proof approach
+     BLOCKERS: Any issues preventing completion
+  *)
+  admit.
+Admitted.
+```
+
+### Incremental Build Habit
+
+**Build after every 1-2 lemmas**, not after adding 10:
+
+```bash
+# Good workflow
+$ vim src/Utils/InterpLemmas.v  # Add 1 lemma
+$ dune build src/Utils/InterpLemmas.vo  # Immediate feedback
+$ vim src/Utils/InterpLemmas.v  # Add next lemma
+$ dune build src/Utils/InterpLemmas.vo
+
+# Bad workflow (don't do this)
+$ vim src/Utils/InterpLemmas.v  # Add 10 lemmas
+$ dune build  # Error explosion - hard to debug
+```
+
+### Watch Mode (Recommended)
+
+Use `dune build --watch` for automatic rebuilds:
+
+```bash
+# Terminal 1: Auto-rebuild on save
+$ dune build --watch
+
+# Terminal 2: Edit files
+$ vim src/Utils/InterpLemmas.v
+# Save triggers automatic rebuild in Terminal 1
+```
+
+### Admitted Proof Limit
+
+Keep admitted proofs under control:
+
+```bash
+# Check current count
+$ ./tools/check_admitted.sh --details
+
+# The project enforces:
+# - Warning at 15 admitted proofs
+# - Pre-commit hook checks on every commit
+# - CI tracks the count
+```
+
+### Common Type Errors and Fixes
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `The term "var" has type "string" while it is expected to have type "Type"` | Missing type application | Use `@LocalWrite string mlir_value var val` |
+| `The reference interp_state was not found` | Missing import | Add `From ITree Require Import Events.StateFacts` |
+| `The term "eq" has type "arith_cmp_pred"` | Name clash | Use `@Coq.Init.Logic.eq R` or `@eq R` |
+| `UNDEFINED EVARS` | Type inference failed in statement | Add explicit type annotation |
+
+### Helper Scripts
+
+```bash
+# Generate proof skeleton
+$ ./tools/proof_skeleton.sh src/Utils/InterpLemmas.v my_lemma
+
+# Check admitted count
+$ ./tools/check_admitted.sh --details
+
+# Check admitted count and fail if > 15
+$ ./tools/check_admitted.sh --max 15 --fail
+```
+
+### Pre-commit Hook
+
+The project has a pre-commit hook that:
+- ✅ Builds all modified Coq files
+- ✅ Checks admitted proof count
+- ✅ Provides helpful error messages
+
+To bypass (not recommended):
+```bash
+$ git commit --no-verify
+```
+
+### Proof Skeleton Pattern
+
+Instead of immediately admitting, write a skeleton:
+
+```coq
+Proof.
+  intros.
+  unfold interpret, denote_general_op.
+
+  (* Step 1: Handle state interpretation *)
+  rewrite interp_state_bind.
+
+  (* Step 2: Process first event *)
+  rewrite interp_state_trigger.
+  unfold handle_event.
+
+  (* Step 3: Case analysis *)
+  destruct (call_stack s) as [|frame rest] eqn:?.
+  - (* Empty stack case *)
+    admit.
+  - (* Non-empty stack case *)
+    admit.
+Admitted.
+```
+
+This catches type errors **immediately** while documenting your proof strategy.
+
+### Definition of Ready for Merge
+
+A PR with proofs is ready for merge ONLY if:
+
+1. ✅ All type signatures verified (no blind admits)
+2. ✅ Build passes without warnings (except deprecation)
+3. ✅ Admitted count documented in PR description
+4. ✅ Each admitted proof has proper TODO comment
+5. ✅ CI checks pass
+
+**No exceptions** - this prevents the "type error explosion" problem.
