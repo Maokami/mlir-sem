@@ -22,6 +22,8 @@ jobs:
         with:
           ocaml-compiler: 5.2.x
           dune-cache: true
+          opam-pin: false
+          opam-depext: false
 
       - name: Add Rocq and Coq opam repositories
         run: |
@@ -30,7 +32,13 @@ jobs:
           opam update
 
       - name: Install project dependencies
-        run: opam install . --deps-only --with-test -y
+        run: |
+          opam install coq.9.0.0 -y
+          opam install coq-ext-lib.0.13.0 -y
+          opam install coq-itree.5.2.1 -y
+          opam install coq-paco.4.2.3 -y
+          opam install alcotest -y
+          opam install ctypes-foreign -y
 
       - name: Build project
         run: opam exec -- dune build
