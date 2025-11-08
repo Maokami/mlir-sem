@@ -27,16 +27,15 @@ jobs:
 
       - name: Add Coq opam repository
         run: |
-          opam repo add coq-released https://coq.inria.fr/opam/released --set-default || true
+          opam repo add coq-released https://coq.inria.fr/opam/released || true
           opam update
 
       - name: Install dependencies
         run: |
-          opam install -y rocq-core.9.0.0
-          opam install -y rocq-stdlib.9.0.0
-          opam install -y coq-paco.4.2.3
-          opam install -y coq-itree.5.2.0
+          opam install -y coq.9.0.0
           opam install -y coq-ext-lib.0.13.0
+          opam install -y coq-itree.5.2.1
+          opam install -y coq-paco.4.2.3
 
       - name: Build project
         run: |
