@@ -25,6 +25,11 @@ jobs:
           opam-pin: false
           opam-depext: false
 
+      - name: Add Coq opam repository
+        run: |
+          opam repo add coq-released https://coq.inria.fr/opam/released --set-default || true
+          opam update
+
       - name: Install dependencies
         run: |
           opam install -y rocq-core.9.0.0
