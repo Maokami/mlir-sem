@@ -35,5 +35,11 @@ jobs:
       - name: Build project
         run: opam exec -- dune build
 
+      - name: Run tests
+        run: opam exec -- dune test
+
+      - name: Verify extraction
+        run: opam exec -- dune build src/Extraction/Extract.vo
+
       - name: Check admitted proofs
         run: opam exec -- ./tools/check_admitted.sh --max 15 --fail
