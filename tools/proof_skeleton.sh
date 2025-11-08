@@ -18,7 +18,7 @@ if [ ! -f "$FILE" ]; then
 fi
 
 # Find the lemma in the file
-if ! grep -q "^Lemma $LEMMA\|^Theorem $LEMMA" "$FILE"; then
+if ! grep -q "^Lemma $LEMMA\|^Theorem $LEMMA\|^Axiom $LEMMA" "$FILE"; then
     echo "Error: Lemma '$LEMMA' not found in $FILE"
     exit 1
 fi

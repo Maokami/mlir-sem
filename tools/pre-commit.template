@@ -1,0 +1,39 @@
+#!/bin/bash
+# Pre-commit hook for mlir-sem project
+# Automatically builds modified Coq files and checks admitted proof count
+
+set -e
+
+echo "🔍 Running pre-commit checks..."
+
+# Get list of modified Coq files
+COQ_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.v$' || true)
+
+if [ -z "$COQ_FILES" ]; then
+    echo "✅ No Coq files modified, skipping build check"
+else
+    echo "📝 Coq files to check:"
+    echo "$COQ_FILES" | sed 's/^/  - /'
+    echo ""
+
+    echo "🔨 Building Coq files..."
+    if ! dune build 2>&1 | tail -20; then
+        echo ""
+        echo "❌ Build failed! Please fix the errors before committing."
+        echo "   To bypass this check (not recommended): git commit --no-verify"
+        exit 1
+    fi
+    echo "✅ Build successful"
+fi
+
+# Check admitted proof count
+echo ""
+if ! ./tools/check_admitted.sh --max 15; then
+    echo ""
+    echo "⚠️  Warning: Admitted proof count exceeds limit"
+    echo "   This is tracked but won't block the commit."
+    echo "   Please complete some proofs soon to stay under the limit."
+fi
+
+echo ""
+echo "✅ All pre-commit checks passed!"

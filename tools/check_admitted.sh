@@ -39,7 +39,7 @@ ADMITTED_FILES=$(grep -rl "Admitted\." src/ 2>/dev/null || true)
 ADMITTED_COUNT=0
 
 if [ -n "$ADMITTED_FILES" ]; then
-    ADMITTED_COUNT=$(echo "$ADMITTED_FILES" | xargs grep "Admitted\." | wc -l | tr -d ' ')
+    ADMITTED_COUNT=$(echo "$ADMITTED_FILES" | xargs -d '\n' grep "Admitted\." 2>/dev/null | wc -l | tr -d ' ')
 fi
 
 echo "📊 Admitted Proof Report"
@@ -60,10 +60,12 @@ if [ "$SHOW_DETAILS" = true ] && [ "$ADMITTED_COUNT" -gt 0 ]; then
 
     for file in $ADMITTED_FILES; do
         count=$(grep "Admitted\." "$file" | wc -l | tr -d ' ')
-        echo "  $file: $count"
+        if [ "$count" -gt 0 ]; then
+            echo "  $file: $count"
 
-        # Show lemma names
-        grep -B 5 "Admitted\." "$file" | grep "^Lemma\|^Theorem\|^Axiom" | sed 's/^/    /'
+            # Show lemma names
+            grep -B 5 "Admitted\." "$file" | grep "^Lemma\|^Theorem\|^Axiom" | sed 's/^/    /'
+        fi
     done
 fi
 

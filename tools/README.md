@@ -65,6 +65,21 @@ Proof.
   ...
 ```
 
+### `setup-hooks.sh`
+
+Install git hooks for the project.
+
+```bash
+./tools/setup-hooks.sh
+```
+
+**What it does:**
+- Copies `tools/pre-commit.template` to `.git/hooks/pre-commit`
+- Makes the hook executable
+- Shows what the hook will do
+
+**When to use:** Once after cloning the repository
+
 ### `validate_pass.sh`
 
 (Existing script) Validate MLIR pass definitions.
@@ -77,7 +92,12 @@ The pre-commit hook automatically runs when you commit:
 2. ✅ Checks admitted proof count
 3. ✅ Provides helpful error messages
 
-**Location:** `.git/hooks/pre-commit`
+**Setup:**
+```bash
+./tools/setup-hooks.sh
+```
+
+This installs the pre-commit hook from `tools/pre-commit.template` to `.git/hooks/pre-commit`.
 
 **To bypass (not recommended):**
 ```bash
@@ -89,6 +109,9 @@ git commit --no-verify
 ### Recommended Development Flow
 
 ```bash
+# 0. Setup git hooks (first time only)
+./tools/setup-hooks.sh
+
 # 1. Start watch mode in one terminal
 dune build --watch
 

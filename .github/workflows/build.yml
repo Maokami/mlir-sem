@@ -1,0 +1,43 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Set up OCaml
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: 4.14.x
+          dune-cache: true
+
+      - name: Install Coq
+        run: opam install -y coq.8.19.2
+
+      - name: Install Coq dependencies
+        run: |
+          opam install -y coq-paco
+          opam install -y coq-itree
+          opam install -y coq-ext-lib
+
+      - name: Build project
+        run: |
+          eval $(opam env)
+          dune build
+
+      - name: Check admitted proofs
+        run: |
+          eval $(opam env)
+          ./tools/check_admitted.sh --max 15 --fail
