@@ -7,7 +7,7 @@
 From Stdlib Require Import String ZArith List.
 From Stdlib.Structures Require Import OrderedTypeEx.
 From ExtLib Require Import Structures.Monad.
-From ITree Require Import ITree Eq Events.State Interp.Interp Interp.InterpFacts.
+From ITree Require Import ITree Eq Events.State Events.StateFacts Interp.Interp Interp.InterpFacts.
 From Stdlib.FSets Require Import FMapWeakList.
 From MlirSem Require Import Syntax.AST Semantics.Events Semantics.Denotation Semantics.Interp.
 From MlirSem Require Import Utils.Tactics.
@@ -24,13 +24,25 @@ Open Scope itree_scope.
 
 (** Write-then-read on the same variable returns the written value *)
 Lemma interpret_write_read_same :
-  forall (s : interpreter_state) (var : string) (val : mlir_value),
+  forall (s : interpreter_state) (var : string) (value : mlir_value),
     s.(call_stack) <> [] ->
-    (* TODO: State the property precisely
-       Writing val to var, then reading var, should return val *)
-    True.
+    interpret (trigger (inl1 (@LocalWrite string mlir_value var value)) ;;
+               trigger (inl1 (@LocalRead string mlir_value var))) s ≈
+    interpret (trigger (inl1 (@LocalWrite string mlir_value var value))) s >>= fun stt =>
+      Ret (fst stt, value).
 Proof.
-  (* This will require understanding the call_frame update semantics *)
+  intros s var value Hstack.
+  (* TODO: Complete this proof
+     SIGNATURE CHECKED: ✓ (intros succeeded)
+     IMPORTS NEEDED: Events.StateFacts (already imported)
+     KEY LEMMAS: interp_state_bind, interp_state_trigger, ZStringMap.find_1, ZStringMap.add_1
+     STRATEGY:
+       1. Unfold interpret and use interp_state_bind
+       2. Apply interp_state_trigger to both LocalWrite and LocalRead
+       3. Use ZStringMap.add_1 to show written value is found
+       4. Simplify the bind chain
+     BLOCKERS: Need to understand proper bind rewriting in eutt context
+  *)
   admit.
 Admitted.
 
@@ -39,9 +51,24 @@ Lemma interpret_write_write_different :
   forall (s : interpreter_state) (var1 var2 : string) (val1 val2 : mlir_value),
     var1 <> var2 ->
     s.(call_stack) <> [] ->
-    (* TODO: Writing to var1 then var2 is independent of order if they're different *)
-    True.
+    (* Writing to var1 doesn't change the value of var2 *)
+    interpret (trigger (inl1 (@LocalWrite string mlir_value var1 val1)) ;;
+               trigger (inl1 (@LocalRead string mlir_value var2))) s ≈
+    interpret (trigger (inl1 (@LocalRead string mlir_value var2))) s >>= fun sv2 =>
+      interpret (trigger (inl1 (@LocalWrite string mlir_value var1 val1))) s >>= fun _ =>
+        Ret (fst sv2, snd sv2).
 Proof.
+  intros s var1 var2 val1 val2 Hneq Hstack.
+  (* TODO: Complete this proof
+     SIGNATURE CHECKED: ✓ (intros succeeded)
+     IMPORTS NEEDED: Events.StateFacts (already imported)
+     KEY LEMMAS: interp_state_bind, interp_state_trigger, ZStringMap.add_2, ZStringMap.add_3
+     STRATEGY:
+       1. Similar to interpret_write_read_same but use ZStringMap.add_2
+       2. Show that writing var1 doesn't affect reading var2 when var1 <> var2
+       3. Use ZStringMap properties to prove frame independence
+     BLOCKERS: Complex bind reasoning with multiple state operations
+  *)
   admit.
 Admitted.
 
@@ -49,9 +76,21 @@ Admitted.
 Lemma interpret_read_pure :
   forall (s : interpreter_state) (var : string),
     s.(call_stack) <> [] ->
-    (* TODO: Reading a variable doesn't modify the state *)
-    True.
+    exists v,
+      interpret (trigger (inl1 (@LocalRead string mlir_value var))) s ≈ Ret (s, v).
 Proof.
+  intros s var Hstack.
+  (* TODO: Complete this proof
+     SIGNATURE CHECKED: ✓ (intros succeeded)
+     IMPORTS NEEDED: Events.StateFacts (already imported)
+     KEY LEMMAS: interp_state_trigger
+     STRATEGY:
+       1. Apply interp_state_trigger
+       2. Unfold handle_event
+       3. Case analysis on call_stack using Hstack
+       4. Show state remains unchanged (only value is returned)
+     BLOCKERS: None - should be straightforward
+  *)
   admit.
 Admitted.
 
@@ -68,9 +107,7 @@ Proof.
   unfold interpret, denote_general_op.
   (* Arith_Constant simply returns Ret [IntVal val], no effects *)
   (* interp_state on a Ret is just Ret (state, value) *)
-  unfold interp_state.
-  (* The key is that Ret doesn't trigger any events, so interp just returns it *)
-  rewrite interp_ret.
+  rewrite interp_state_ret.
   reflexivity.
 Qed.
 
@@ -87,11 +124,18 @@ Lemma interpret_addi_computes :
     Ret (s, [IntVal (lval + rval)]).
 Proof.
   intros s lhs rhs lval rval ty Hstack [frame [rest [Hframe [Hlhs Hrhs]]]].
-  unfold interpret, denote_general_op.
-  (* This requires:
-     1. Unfolding interp_state
-     2. Showing LocalRead gets the right values
-     3. Showing the computation proceeds correctly
+  (* TODO: Complete this proof
+     SIGNATURE CHECKED: ✓ (intros and destructing succeeded)
+     IMPORTS NEEDED: Events.StateFacts (already imported)
+     KEY LEMMAS: interp_state_bind, interp_state_trigger, bind_ret_l
+     STRATEGY:
+       1. Unfold interpret and denote_general_op (Arith_AddI)
+       2. Use interp_state_bind to handle the bind chain
+       3. Apply interp_state_trigger to first LocalRead, use Hlhs
+       4. Simplify with bind_ret_l
+       5. Apply interp_state_trigger to second LocalRead, use Hrhs
+       6. Simplify and apply interp_state_ret for final Ret
+     BLOCKERS: None - similar pattern to interpret_constant_pure
   *)
   admit.
 Admitted.
@@ -108,7 +152,7 @@ Ltac interp_constant_simp :=
 (** Tactic to handle write-read sequences *)
 Ltac interp_write_read :=
   repeat match goal with
-  | [ |- context[interpret (trigger (inl1 (LocalWrite ?v ?val));; trigger (inl1 (LocalRead ?v))) ?s] ] =>
+  | [ |- context[interpret (trigger (inl1 (@LocalWrite string mlir_value ?v ?val));; trigger (inl1 (@LocalRead string mlir_value ?v))) ?s] ] =>
       rewrite interpret_write_read_same; auto
   end.
 
