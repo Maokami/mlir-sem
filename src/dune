@@ -18,6 +18,7 @@
   TranslationValidation.Examples.ConstantFold_Addi
   Utils.Tactics
   Utils.Lemmas
+  Learning.ITreeBasics
   Main)
  (flags -R src MlirSem)
  (theories Stdlib Paco ITree ExtLib))
