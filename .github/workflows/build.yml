@@ -42,7 +42,7 @@ jobs:
       - name: Build project
         run: |
           eval $(opam env)
-          dune build
+          dune build --no-sandbox
 
       - name: Check admitted proofs
         run: |
