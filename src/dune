@@ -16,8 +16,12 @@
   TranslationValidation.Framework
   TranslationValidation.SCCP_Simple
   TranslationValidation.Examples.ConstantFold_Addi
+  TranslationValidation.Examples.ConstantFold_Simple
+  TranslationValidation.Examples.ConstantFold_Compute
   Utils.Tactics
   Utils.Lemmas
+  Utils.InterpLemmas
+  Utils.DenotationLemmas
   Main)
  (flags -R src MlirSem)
  (theories Stdlib Paco ITree ExtLib))

@@ -6,7 +6,7 @@
 *)
 
 From Stdlib Require Import String ZArith List.
-From ITree Require Import ITree Eq.
+From ITree Require Import ITree Eq Events.State Events.StateFacts.
 From MlirSem Require Import Syntax.AST.
 From MlirSem Require Import Semantics.Values Semantics.Events.
 From MlirSem Require Import Semantics.Interp Semantics.Denotation.
@@ -104,8 +104,8 @@ Definition t_folded := get_tree tree_folded.
 Axiom interp_state_preserves_eutt :
   forall {E1 E2 S R} (h : E1 ~> Monads.stateT S (itree E2))
          (t1 t2 : itree E1 R) (s : S),
-    eutt eq t1 t2 ->
-    eutt eq (interp_state h t1 s) (interp_state h t2 s).
+    eutt (@Coq.Init.Logic.eq R) t1 t2 ->
+    eutt (@Coq.Init.Logic.eq (S * R)) (interp_state h t1 s) (interp_state h t2 s).
 
 Axiom denote_func_deterministic :
   forall (f1 f2 : mlir_func),

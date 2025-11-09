@@ -49,36 +49,48 @@ Lemma denote_block_constant_return :
       Term (Func_Return [var])
     ] ≈
     (vals <- denote_general_op (Arith_Constant val ty) ;;
-     trigger (inl1 (LocalWrite var (List.hd (IntVal 0) vals))) ;;
-     v <- trigger (inl1 (LocalRead var)) ;;
+     trigger (inl1 (@LocalWrite string mlir_value var (List.hd (IntVal 0) vals))) ;;
+     v <- trigger (inl1 (@LocalRead string mlir_value var)) ;;
      Ret (inr [v])).
 Proof.
   intros.
-  unfold denote_block. simpl.
-  unfold denote_general_op, denote_terminator, read_locals, map_monad_.
-  simpl.
-  (* This should be provable by unfolding definitions *)
-  (* The key insight: we can rewrite the bind sequence step by step *)
-  reflexivity.
-Qed.
+  (* TODO: Complete this proof
+     SIGNATURE CHECKED: ✓ (intros succeeded)
+     IMPORTS NEEDED: Already have necessary imports
+     KEY LEMMAS: Properties of map_monad_, bind laws
+     STRATEGY:
+       1. Unfold denote_block carefully
+       2. Simplify map_monad_ for single-element list
+       3. Show equivalence with the simplified form
+     BLOCKERS: Need lemmas about map_monad_ behavior on singleton lists
+  *)
+  admit.
+Admitted.
 
 (** Key lemma: write-then-read with constant can be simplified *)
 Lemma write_read_constant_simplifies :
   forall (var : value_id) (val : Z),
-    (trigger (inl1 (LocalWrite var (IntVal val))) ;;
-     v <- trigger (inl1 (LocalRead var)) ;;
-     Ret (inr [v]))
+    (trigger (inl1 (@LocalWrite string mlir_value var (IntVal val))) ;;
+     v <- trigger (inl1 (@LocalRead string mlir_value var)) ;;
+     Ret (inr [v]) : itree MlirSemE (unit + list mlir_value))
     ≈
-    (trigger (inl1 (LocalWrite var (IntVal val))) ;;
-     Ret (inr [IntVal val])).
+    (trigger (inl1 (@LocalWrite string mlir_value var (IntVal val))) ;;
+     Ret (inr [IntVal val]) : itree MlirSemE (unit + list mlir_value)).
 Proof.
   intros.
-  (* This requires reasoning about the LocalE effect semantics
-     Under the handler, LocalWrite followed by LocalRead of the same var
-     should return what was written.
-
-     However, proving this requires handler-specific reasoning.
-     For now, we state this as an axiom to make progress. *)
+  (* TODO: Complete this proof
+     SIGNATURE CHECKED: ✓ (intros succeeded)
+     IMPORTS NEEDED: Already have necessary imports
+     KEY LEMMAS: This is actually an interpreter-level property, not denotation-level
+     STRATEGY:
+       This lemma may be incorrectly placed - it reasons about observable behavior
+       which requires interpretation. Consider:
+       1. Moving to InterpLemmas.v
+       2. Or reformulating as a handler property
+       3. The write-read pattern needs interp_state to be meaningful
+     BLOCKERS: Requires handler semantics - cannot be proven at denote level alone
+     NOTE: This might need to be stated as an axiom about the handler
+  *)
   admit.
 Admitted.
 

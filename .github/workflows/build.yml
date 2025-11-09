@@ -1,0 +1,39 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Set up OCaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 5.2.x
+          dune-cache: true
+
+      - name: Add Rocq and Coq opam repositories
+        run: |
+          opam repo add rocq-core-dev https://rocq-prover.org/opam/core-dev
+          opam repo add coq-released https://coq.inria.fr/opam/released
+          opam update
+
+      - name: Install project dependencies
+        run: opam install . --deps-only --with-test -y
+
+      - name: Build Coq library and tests
+        run: opam exec -- dune build src/ test/unit/ test/property/ test/TranslationValidation/
+
+      - name: Check admitted proofs
+        run: opam exec -- ./tools/check_admitted.sh --max 20 --fail
