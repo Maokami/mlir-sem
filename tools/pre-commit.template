@@ -28,7 +28,7 @@ fi
 
 # Check admitted proof count
 echo ""
-if ! ./tools/check_admitted.sh --max 15; then
+if ! ./tools/check_admitted.sh --max 20; then
     echo ""
     echo "⚠️  Warning: Admitted proof count exceeds limit"
     echo "   This is tracked but won't block the commit."

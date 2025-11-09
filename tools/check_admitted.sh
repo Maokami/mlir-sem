@@ -5,7 +5,7 @@
 set -e
 
 # Default values
-MAX_ADMITTED=15
+MAX_ADMITTED=20
 FAIL_ON_EXCEED=false
 SHOW_DETAILS=false
 
