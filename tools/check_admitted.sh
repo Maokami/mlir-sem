@@ -39,7 +39,12 @@ ADMITTED_FILES=$(grep -rl "Admitted\." src/ 2>/dev/null || true)
 ADMITTED_COUNT=0
 
 if [ -n "$ADMITTED_FILES" ]; then
-    ADMITTED_COUNT=$(echo "$ADMITTED_FILES" | xargs -d '\n' grep "Admitted\." 2>/dev/null | wc -l | tr -d ' ')
+    # Use portable method instead of GNU-specific xargs -d
+    # Count admitted proofs by iterating over files
+    while IFS= read -r file; do
+        count=$(grep -c "Admitted\." "$file" 2>/dev/null || echo 0)
+        ADMITTED_COUNT=$((ADMITTED_COUNT + count))
+    done <<< "$ADMITTED_FILES"
 fi
 
 echo "📊 Admitted Proof Report"

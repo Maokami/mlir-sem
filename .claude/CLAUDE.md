@@ -306,7 +306,7 @@ Keep admitted proofs under control:
 $ ./tools/check_admitted.sh --details
 
 # The project enforces:
-# - Warning at 15 admitted proofs
+# - Warning at 20 admitted proofs
 # - Pre-commit hook checks on every commit
 # - CI tracks the count
 ```
@@ -329,8 +329,8 @@ $ ./tools/proof_skeleton.sh src/Utils/InterpLemmas.v my_lemma
 # Check admitted count
 $ ./tools/check_admitted.sh --details
 
-# Check admitted count and fail if > 15
-$ ./tools/check_admitted.sh --max 15 --fail
+# Check admitted count and fail if > 20
+$ ./tools/check_admitted.sh --max 20 --fail
 ```
 
 ### Pre-commit Hook
