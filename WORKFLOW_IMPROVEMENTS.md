@@ -22,7 +22,17 @@ This led to:
 
 ## Solutions Implemented
 
-### 1. Pre-commit Hook (`.git/hooks/pre-commit`)
+### 1. Pre-commit Hook
+
+**Setup:**
+```bash
+$ ./tools/setup-hooks.sh
+```
+
+This installs the pre-commit hook from `tools/pre-commit.template` to `.git/hooks/pre-commit`.
+
+**Note:** The `.git/hooks/pre-commit` file is not tracked in the repository (`.git/` is ignored by git).
+Use `tools/setup-hooks.sh` to install it locally.
 
 Automatically runs on every commit:
 
@@ -193,22 +203,23 @@ $ dune build        # Error explosion ✗
 
 ## Files Modified
 
-1. `.git/hooks/pre-commit` - Automated validation
-2. `tools/check_admitted.sh` - Admitted proof tracker
-3. `tools/proof_skeleton.sh` - Proof template generator
-4. `tools/README.md` - Tool documentation
-5. `.claude/CLAUDE.md` - Development guidelines
-6. `src/Utils/InterpLemmas.v` - Enhanced TODO comments
-7. `src/Utils/DenotationLemmas.v` - Enhanced TODO comments
+1. `tools/pre-commit.template` - Pre-commit hook template (install with `tools/setup-hooks.sh`)
+2. `tools/setup-hooks.sh` - Script to install pre-commit hook
+3. `tools/check_admitted.sh` - Admitted proof tracker
+4. `tools/proof_skeleton.sh` - Proof template generator
+5. `tools/README.md` - Tool documentation
+6. `.claude/CLAUDE.md` - Development guidelines
+7. `src/Utils/InterpLemmas.v` - Enhanced TODO comments
+8. `src/Utils/DenotationLemmas.v` - Enhanced TODO comments
 
 ## Next Steps
 
 To fully adopt this workflow:
 
-1. ✅ **Immediate**: Use pre-commit hook (already active)
+1. ✅ **Setup**: Run `./tools/setup-hooks.sh` to install pre-commit hook
 2. ✅ **Immediate**: Run `dune build --watch` during development
-3. ⏳ **Short-term**: Complete admitted proofs under 15
-4. ⏳ **Medium-term**: Add CI check for admitted count
+3. ⏳ **Short-term**: Complete admitted proofs under current limit (20)
+4. ✅ **Done**: Added CI check for admitted count
 5. ⏳ **Long-term**: Document proof patterns in separate guide
 
 ## Testing
