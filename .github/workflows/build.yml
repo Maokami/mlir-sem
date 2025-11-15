@@ -57,6 +57,7 @@ jobs:
           opam update
 
       - name: Install project dependencies
+        if: ${{ steps.opam-cache.outputs.cache-hit != 'true' }}
         run: opam install . --deps-only --with-test -y
 
       - name: Build Coq library and tests
