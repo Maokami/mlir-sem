@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    env:
+      OCAML_COMPILER: 5.2.x
 
     steps:
       - name: Checkout repository
@@ -17,10 +19,19 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
+      - name: Cache opam switch
+        id: opam-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.opam
+          key: opam-${{ runner.os }}-${{ env.OCAML_COMPILER }}-${{ hashFiles('**/*.opam', 'dune-project') }}
+          restore-keys: |
+            opam-${{ runner.os }}-${{ env.OCAML_COMPILER }}-
+
       - name: Set up OCaml
         uses: ocaml/setup-ocaml@v3
         with:
-          ocaml-compiler: 5.2.x
+          ocaml-compiler: ${{ env.OCAML_COMPILER }}
           dune-cache: true
 
       - name: Add Rocq and Coq opam repositories
