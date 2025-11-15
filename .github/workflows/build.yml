@@ -36,8 +36,17 @@ jobs:
 
       - name: Add Rocq and Coq opam repositories
         run: |
-          opam repo add rocq-core-dev https://rocq-prover.org/opam/core-dev
-          opam repo add coq-released https://coq.inria.fr/opam/released
+          ensure_repo() {
+            local name="$1"
+            local url="$2"
+            if opam repo list --short | grep -qx "$name"; then
+              opam repo set-url "$name" "$url"
+            else
+              opam repo add "$name" "$url"
+            fi
+          }
+          ensure_repo rocq-core-dev https://rocq-prover.org/opam/core-dev
+          ensure_repo coq-released https://coq.inria.fr/opam/released
           opam update
 
       - name: Install project dependencies
