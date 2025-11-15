@@ -19,9 +19,9 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      - name: Cache opam switch
+      - name: Restore opam cache
         id: opam-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ~/.opam
           key: opam-${{ runner.os }}-${{ env.OCAML_COMPILER }}-${{ hashFiles('**/*.opam', 'dune-project') }}
@@ -51,3 +51,10 @@ jobs:
 
       - name: Check admitted proofs
         run: opam exec -- ./tools/check_admitted.sh --max 20 --fail
+
+      - name: Save opam cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.opam
+          key: opam-${{ runner.os }}-${{ env.OCAML_COMPILER }}-${{ hashFiles('**/*.opam', 'dune-project') }}
