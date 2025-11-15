@@ -39,7 +39,8 @@ jobs:
           ensure_repo() {
             local name="$1"
             local url="$2"
-            if opam repo list --short | grep -qx "$name"; then
+            local repo_path="${OPAMROOT:-$HOME/.opam}/repo/$name"
+            if [ -d "$repo_path" ]; then
               opam repo set-url "$name" "$url"
             else
               opam repo add "$name" "$url"
