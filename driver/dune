@@ -5,69 +5,19 @@
  (wrapped true))
 
 (executable
- (name run)
- (public_name driver_run)
- (modules run)
+(name run)
+(public_name driver_run)
+(modules run)
  (libraries driver mlir_sem_extracted)
- (flags
+ (link_flags
   (:standard
-   -cclib
-   "-L%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}"
-   -cclib
-   "-Wl,-rpath,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}"
-   -cclib
-   "-Wl,-export_dynamic"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIIR.a"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIFunc.a"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIArith.a"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIControlFlow.a"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIRegisterEverything.a"
-   -cclib
-   "-lc++"
-   -cclib
-   "-lc++abi"
-   -cclib
-   "-lMLIR"
-   -cclib
-   "-lLLVM-C"
-   -cclib
-   "-lLLVM")))
+   %{read-lines:../config/mlir_link_flags.sexp})))
 
 (executable
- (name mlir2coq)
- (public_name mlir2coq)
- (modules mlir2coq)
+(name mlir2coq)
+(public_name mlir2coq)
+(modules mlir2coq)
  (libraries driver mlir_sem_extracted)
- (flags
+ (link_flags
   (:standard
-   -cclib
-   "-L%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}"
-   -cclib
-   "-Wl,-rpath,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}"
-   -cclib
-   "-Wl,-export_dynamic"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIIR.a"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIFunc.a"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIArith.a"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIControlFlow.a"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIRegisterEverything.a"
-   -cclib
-   "-lc++"
-   -cclib
-   "-lc++abi"
-   -cclib
-   "-lMLIR"
-   -cclib
-   "-lLLVM-C"
-   -cclib
-   "-lLLVM")))
+   %{read-lines:../config/mlir_link_flags.sexp})))
