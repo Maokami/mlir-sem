@@ -28,8 +28,6 @@ jobs:
             ${{ github.workspace }}/_opam
             ${{ github.workspace }}/.opam-switch
           key: opam-${{ runner.os }}-${{ env.OCAML_COMPILER }}-${{ hashFiles('**/*.opam', 'dune-project') }}
-          restore-keys: |
-            opam-${{ runner.os }}-${{ env.OCAML_COMPILER }}-
 
       - name: Set up OCaml
         uses: ocaml/setup-ocaml@v3
