@@ -23,7 +23,10 @@ jobs:
         id: opam-cache
         uses: actions/cache/restore@v4
         with:
-          path: ~/.opam
+          path: |
+            ~/.opam
+            ${{ github.workspace }}/_opam
+            ${{ github.workspace }}/.opam-switch
           key: opam-${{ runner.os }}-${{ env.OCAML_COMPILER }}-${{ hashFiles('**/*.opam', 'dune-project') }}
           restore-keys: |
             opam-${{ runner.os }}-${{ env.OCAML_COMPILER }}-
@@ -69,5 +72,8 @@ jobs:
         if: always()
         uses: actions/cache/save@v4
         with:
-          path: ~/.opam
+          path: |
+            ~/.opam
+            ${{ github.workspace }}/_opam
+            ${{ github.workspace }}/.opam-switch
           key: opam-${{ runner.os }}-${{ env.OCAML_COMPILER }}-${{ hashFiles('**/*.opam', 'dune-project') }}
