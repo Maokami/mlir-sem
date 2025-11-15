@@ -4,15 +4,18 @@ module Process = Configurator.V1.Process
 
 let concat_map f xs = List.concat (List.map f xs)
 
+let known_versions = ["21"; "20"; "19"; "18"; "17"; "16"; "15"; "14"]
+
+let llvm_config_candidates =
+  "llvm-config" :: List.map (fun v -> "llvm-config-" ^ v) known_versions
+
 let default_candidates =
   [
     "/opt/homebrew/opt/llvm/lib";
     "/usr/local/opt/llvm/lib";
-    "/usr/lib/llvm-19/lib";
-    "/usr/lib/llvm-18/lib";
-    "/usr/lib/llvm-17/lib";
     "/usr/lib/llvm/lib";
   ]
+  @ List.map (fun v -> Printf.sprintf "/usr/lib/llvm-%s/lib" v) known_versions
 
 let capi_archives =
   [
@@ -30,19 +33,23 @@ let dir_exists path =
   with
   | Unix.Unix_error _ -> false
 
+let rec find_with_llvm_config cfg = function
+  | [] -> None
+  | prog :: rest -> (
+      match Process.run cfg prog ["--libdir"] with
+      | { Process.exit_code = 0; stdout; _ } ->
+          let candidate = String.trim stdout in
+          if dir_exists candidate then Some candidate
+          else find_with_llvm_config cfg rest
+      | _ -> find_with_llvm_config cfg rest )
+
 let detect_libdir cfg =
   match Sys.getenv_opt "LLVM_LIBDIR" with
   | Some path when dir_exists path -> path
   | Some path ->
       die "%s is set but %s does not exist" "LLVM_LIBDIR" path
   | None -> (
-      let from_llvm_config =
-        match Process.run cfg "llvm-config" ["--libdir"] with
-        | { Process.exit_code = 0; stdout; _ } ->
-            let candidate = String.trim stdout in
-            if dir_exists candidate then Some candidate else None
-        | _ -> None
-      in
+      let from_llvm_config = find_with_llvm_config cfg llvm_config_candidates in
       match from_llvm_config with
       | Some path -> path
       | None -> (
