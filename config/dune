@@ -1,0 +1,9 @@
+(executable
+ (name detect_llvm)
+ (modules detect_llvm)
+ (libraries dune-configurator))
+
+(rule
+ (targets mlir_link_flags.sexp)
+ (action
+  (run %{dep:detect_llvm.exe} -o %{targets})))

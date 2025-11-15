@@ -8,44 +8,19 @@
   (file ../validation/oracle/sccp/sccp_branch.mlir)
   (file ../validation/oracle/sccp/sccp_branch.opt.mlir))
  (action
+ (setenv
+  MLIR_TEST_FILE
+  %{dep:simple_arith.mlir}
   (setenv
-   MLIR_TEST_FILE
-   %{dep:simple_arith.mlir}
-   (setenv
-    RUN_EXE_PATH
+   RUN_EXE_PATH
     %{bin:driver_run}
     (setenv
      MLIR_OPT_PATH
      %{env:MLIR_OPT_PATH=mlir-opt}
      (run %{exe:test_driver.exe} test)))))
- (flags
-  (:standard
-   -cclib
-   "-L%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}"
-   -cclib
-   "-Wl,-rpath,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}"
-   -cclib
-   "-Wl,-export_dynamic"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIIR.a"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIFunc.a"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIArith.a"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIControlFlow.a"
-   -cclib
-   "-Wl,-force_load,%{env:LLVM_LIBDIR=/usr/local/opt/llvm/lib}/libMLIRCAPIRegisterEverything.a"
-   -cclib
-   "-lc++"
-   -cclib
-   "-lc++abi"
-   -cclib
-   "-lMLIR"
-   -cclib
-   "-lLLVM-C"
-   -cclib
-   "-lLLVM")))
+(link_flags
+ (:standard
+   %{read-lines:../config/mlir_link_flags.sexp})))
 
 (test
  (name test_coq_exporter)
