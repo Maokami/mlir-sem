@@ -37,7 +37,6 @@ jobs:
         uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ env.OCAML_COMPILER }}
-          opam-switch: mlir-sem-ci
           opam-local-packages: mlir-sem.opam
           opam-repositories: |
             default: git+https://github.com/ocaml/opam-repository.git
