@@ -95,9 +95,6 @@ let mac_runtime_libs libdir =
       ["-cclib"; full])
     ["libMLIR.dylib"; "libLLVM-C.dylib"; "libLLVM.dylib"]
 
-let linux_runtime_libs =
-  ["-cclib"; "-lMLIR"; "-cclib"; "-lLLVM-C"; "-cclib"; "-lLLVM"]
-
 let mac_cxx_runtime = ["-cclib"; "-lc++"; "-cclib"; "-lc++abi"]
 let linux_cxx_runtime = ["-cclib"; "-lstdc++"; "-cclib"; "-lm"]
 
