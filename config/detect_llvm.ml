@@ -101,6 +101,50 @@ let linux_runtime_libs =
 let mac_cxx_runtime = ["-cclib"; "-lc++"; "-cclib"; "-lc++abi"]
 let linux_cxx_runtime = ["-cclib"; "-lstdc++"; "-cclib"; "-lm"]
 
+let contains_sub str sub =
+  let len_s = String.length sub in
+  let len = String.length str in
+  let rec aux i =
+    if i + len_s > len then false
+    else if String.sub str i len_s = sub then true
+    else aux (i + 1)
+  in
+  aux 0
+
+let is_library_file name =
+  Filename.check_suffix name ".a"
+  || Filename.check_suffix name ".so"
+  || contains_sub name ".a."
+  || contains_sub name ".so."
+
+let starts_with ~prefix s =
+  let len_p = String.length prefix in
+  String.length s >= len_p && String.sub s 0 len_p = prefix
+
+let find_library libdir base =
+  let entries =
+    try Array.to_list (Sys.readdir libdir) with Sys_error _ -> []
+  in
+  let is_candidate name =
+    is_library_file name
+    && starts_with ~prefix:base name
+    &&
+    (String.length name = String.length base
+    ||
+    let c = name.[String.length base] in
+    Char.equal c '.' || Char.equal c '-')
+  in
+  match List.find_opt is_candidate entries with
+  | Some name -> Filename.concat libdir name
+  | None -> die "Unable to locate %s in %s" base libdir
+
+let linux_runtime_libs libdir =
+  concat_map
+    (fun base ->
+      let path = find_library libdir base in
+      ["-cclib"; path])
+    ["libMLIR"; "libLLVM-C"; "libLLVM"]
+
 let emit_flags host libdir =
   let common =
     [
@@ -117,7 +161,7 @@ let emit_flags host libdir =
       common @ mac_force_loads libdir @ mac_cxx_runtime @ mac_runtime_libs libdir
   | Linux ->
       common @ linux_whole_archive libdir @ linux_cxx_runtime
-      @ linux_runtime_libs
+      @ linux_runtime_libs libdir
   | Unknown system ->
       die "Unsupported host platform: %s. Set LLVM_LIBDIR and edit detect_llvm."
         system
