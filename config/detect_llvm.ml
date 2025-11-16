@@ -118,10 +118,19 @@ let starts_with ~prefix s =
   let len_p = String.length prefix in
   String.length s >= len_p && String.sub s 0 len_p = prefix
 
-let find_library libdir base =
-  let entries =
-    try Array.to_list (Sys.readdir libdir) with Sys_error _ -> []
+let candidate_libdirs libdir =
+  let dirs =
+    [
+      libdir;
+      Filename.concat libdir "x86_64-unknown-linux-gnu";
+      Filename.concat libdir "x86_64-linux-gnu";
+      "/usr/lib/x86_64-linux-gnu";
+      "/usr/lib";
+    ]
   in
+  dirs |> List.filter dir_exists |> List.sort_uniq String.compare
+
+let find_library libdir base =
   let is_candidate name =
     is_library_file name
     && starts_with ~prefix:base name
@@ -131,9 +140,17 @@ let find_library libdir base =
     let c = name.[String.length base] in
     Char.equal c '.' || Char.equal c '-')
   in
-  match List.find_opt is_candidate entries with
-  | Some name -> Filename.concat libdir name
-  | None -> die "Unable to locate %s in %s" base libdir
+  let rec search = function
+    | [] -> die "Unable to locate %s in %s or common locations" base libdir
+    | dir :: rest -> (
+        let entries =
+          try Array.to_list (Sys.readdir dir) with Sys_error _ -> []
+        in
+        match List.find_opt is_candidate entries with
+        | Some name -> Filename.concat dir name
+        | None -> search rest )
+  in
+  search (candidate_libdirs libdir)
 
 let linux_runtime_libs libdir =
   concat_map
