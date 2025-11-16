@@ -170,6 +170,9 @@ let linux_runtime_libs libdir =
          | None -> [])
 
 let emit_flags host libdir =
+  let export_flag =
+    match host with Mac -> "-Wl,-export_dynamic" | _ -> "-Wl,-export-dynamic"
+  in
   let common =
     [
       "-cclib";
@@ -177,7 +180,7 @@ let emit_flags host libdir =
       "-cclib";
       Printf.sprintf "-Wl,-rpath,%s" libdir;
       "-cclib";
-      "-Wl,-export_dynamic";
+      export_flag;
     ]
   in
   match host with
