@@ -8,6 +8,7 @@ install: [ "dune" "install" "-p" name ]
 depends: [
   "ocaml" {>= "5.2.0"}
   "dune" {>= "3.14"}
+  "dune-configurator"
   "rocq-core" {>= "9.0.0" & < "9.1~"}
   "rocq-stdlib" {>= "9.0.0" & < "9.1~"}
   "coq-ext-lib" {>= "0.13.0" & < "0.14~"}

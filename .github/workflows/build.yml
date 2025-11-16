@@ -19,60 +19,43 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      - name: Restore opam cache
-        id: opam-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ~/.opam
-            ${{ github.workspace }}/_opam
-            ${{ github.workspace }}/.opam-switch
-          key: opam-v2-${{ runner.os }}-${{ env.OCAML_COMPILER }}-${{ hashFiles('mlir-sem.opam', 'dune-project') }}
+      - name: Install LLVM toolchain
+        env:
+          LLVM_VERSION: "18"
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y wget software-properties-common gnupg
+          wget https://apt.llvm.org/llvm.sh -O /tmp/llvm.sh
+          chmod +x /tmp/llvm.sh
+          sudo /tmp/llvm.sh $LLVM_VERSION all
+          sudo apt-get install -y libmlir-$LLVM_VERSION-dev mlir-$LLVM_VERSION-tools
+          echo "LLVM_LIBDIR=/usr/lib/llvm-$LLVM_VERSION/lib" >> "$GITHUB_ENV"
+          echo "/usr/lib/llvm-$LLVM_VERSION/bin" >> "$GITHUB_PATH"
 
       - name: Set up OCaml
         uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ env.OCAML_COMPILER }}
+          opam-local-packages: mlir-sem.opam
+          opam-repositories: |
+            default: git+https://github.com/ocaml/opam-repository.git
+            rocq-core-dev: https://rocq-prover.org/opam/core-dev
+            coq-released: https://coq.inria.fr/opam/released
           dune-cache: true
-
-      - name: Add Rocq and Coq opam repositories
-        run: |
-          ensure_repo() {
-            local name="$1"
-            local url="$2"
-            local repo_path="${OPAMROOT:-$HOME/.opam}/repo/$name"
-            if opam --color=never repo list --short | grep -qx "$name"; then
-              opam repo set-url "$name" "$url"
-            else
-              if [ -d "$repo_path" ]; then
-                rm -rf "$repo_path"
-              fi
-              opam repo add "$name" "$url"
-            fi
-          }
-          ensure_repo rocq-core-dev https://rocq-prover.org/opam/core-dev
-          ensure_repo coq-released https://coq.inria.fr/opam/released
-          opam update
+          cache-prefix: opam-v3
 
       - name: Install project dependencies
-        if: ${{ steps.opam-cache.outputs.cache-hit != 'true' }}
         run: opam install . --deps-only --with-test -y
 
       - name: Build Coq library and tests
         run: opam exec -- dune build src/ test/unit/ test/property/ test/TranslationValidation/
 
       - name: Run dune test suite
+        env:
+          RUN_EXE_PATH: ${{ github.workspace }}/_build/default/driver/run.exe
+          MLIR_OPT_PATH: /usr/lib/llvm-18/bin/mlir-opt
         run: opam exec -- dune test -f
 
       - name: Check admitted proofs
         run: opam exec -- ./tools/check_admitted.sh --max 20 --fail
-
-      - name: Save opam cache
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.opam
-            ${{ github.workspace }}/_opam
-            ${{ github.workspace }}/.opam-switch
-          key: opam-v2-${{ runner.os }}-${{ env.OCAML_COMPILER }}-${{ hashFiles('mlir-sem.opam', 'dune-project') }}
