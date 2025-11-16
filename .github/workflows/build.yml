@@ -19,6 +19,19 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
+      - name: Install LLVM toolchain
+        env:
+          LLVM_VERSION: "18.1.6"
+        run: |
+          set -euo pipefail
+          LLVM_TAR="clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-22.04.tar.xz"
+          LLVM_URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/${LLVM_TAR}"
+          curl -L "$LLVM_URL" -o /tmp/${LLVM_TAR}
+          mkdir -p "$RUNNER_TEMP/llvm"
+          tar -xf /tmp/${LLVM_TAR} -C "$RUNNER_TEMP/llvm" --strip-components=1
+          echo "LLVM_LIBDIR=$RUNNER_TEMP/llvm/lib" >> "$GITHUB_ENV"
+          echo "$RUNNER_TEMP/llvm/bin" >> "$GITHUB_PATH"
+
       - name: Restore opam cache
         id: opam-cache
         uses: actions/cache/restore@v4
