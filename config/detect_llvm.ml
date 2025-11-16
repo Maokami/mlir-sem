@@ -130,7 +130,7 @@ let candidate_libdirs libdir =
   in
   dirs |> List.filter dir_exists |> List.sort_uniq String.compare
 
-let find_library libdir base =
+let find_library_paths libdir base =
   let is_candidate name =
     is_library_file name
     && starts_with ~prefix:base name
@@ -140,24 +140,34 @@ let find_library libdir base =
     let c = name.[String.length base] in
     Char.equal c '.' || Char.equal c '-')
   in
-  let rec search = function
-    | [] -> die "Unable to locate %s in %s or common locations" base libdir
+  let rec search acc = function
+    | [] -> List.rev acc
     | dir :: rest -> (
         let entries =
           try Array.to_list (Sys.readdir dir) with Sys_error _ -> []
         in
-        match List.find_opt is_candidate entries with
-        | Some name -> Filename.concat dir name
-        | None -> search rest )
+        let matches =
+          List.filter is_candidate entries
+          |> List.map (fun name -> Filename.concat dir name)
+        in
+        search (matches @ acc) rest )
   in
-  search (candidate_libdirs libdir)
+  search [] (candidate_libdirs libdir)
 
 let linux_runtime_libs libdir =
-  concat_map
-    (fun base ->
-      let path = find_library libdir base in
-      ["-cclib"; path])
-    ["libMLIR"; "libLLVM-C"; "libLLVM"]
+  let resolve base ~required =
+    match find_library_paths libdir base with
+    | path :: _ -> Some path
+    | [] ->
+        if required then
+          die "Unable to locate %s in %s or common locations" base libdir
+        else None
+  in
+  ["libMLIR", true; "libLLVM-C", false; "libLLVM", true]
+  |> concat_map (fun (base, required) ->
+         match resolve base ~required with
+         | Some path -> ["-cclib"; path]
+         | None -> [])
 
 let emit_flags host libdir =
   let common =
