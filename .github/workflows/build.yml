@@ -38,6 +38,7 @@ jobs:
         with:
           ocaml-compiler: ${{ env.OCAML_COMPILER }}
           dune-cache: true
+          cache-prefix: opam-v2
 
       - name: Add Rocq and Coq opam repositories
         run: |
