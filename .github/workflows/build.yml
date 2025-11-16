@@ -37,27 +37,14 @@ jobs:
         uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ env.OCAML_COMPILER }}
+          opam-switch: mlir-sem-ci
+          opam-local-packages: mlir-sem.opam
+          opam-repositories: |
+            default: git+https://github.com/ocaml/opam-repository.git
+            rocq-core-dev: https://rocq-prover.org/opam/core-dev
+            coq-released: https://coq.inria.fr/opam/released
           dune-cache: true
           cache-prefix: opam-v3
-
-      - name: Add Rocq and Coq opam repositories
-        run: |
-          ensure_repo() {
-            local name="$1"
-            local url="$2"
-            local repo_path="${OPAMROOT:-$HOME/.opam}/repo/$name"
-            if opam --color=never repo list --short | grep -qx "$name"; then
-              opam repo set-url "$name" "$url"
-            else
-              if [ -d "$repo_path" ]; then
-                rm -rf "$repo_path"
-              fi
-              opam repo add "$name" "$url"
-            fi
-          }
-          ensure_repo rocq-core-dev https://rocq-prover.org/opam/core-dev
-          ensure_repo coq-released https://coq.inria.fr/opam/released
-          opam update
 
       - name: Install project dependencies
         run: opam install . --deps-only --with-test -y
