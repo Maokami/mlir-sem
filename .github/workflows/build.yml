@@ -27,7 +27,7 @@ jobs:
             ~/.opam
             ${{ github.workspace }}/_opam
             ${{ github.workspace }}/.opam-switch
-          key: opam-v2-${{ runner.os }}-${{ env.OCAML_COMPILER }}-${{ hashFiles('**/*.opam', 'dune-project') }}
+          key: opam-v2-${{ runner.os }}-${{ env.OCAML_COMPILER }}-${{ hashFiles('mlir-sem.opam', 'dune-project') }}
 
       - name: Set up OCaml
         uses: ocaml/setup-ocaml@v3
@@ -75,4 +75,4 @@ jobs:
             ~/.opam
             ${{ github.workspace }}/_opam
             ${{ github.workspace }}/.opam-switch
-          key: opam-v2-${{ runner.os }}-${{ env.OCAML_COMPILER }}-${{ hashFiles('**/*.opam', 'dune-project') }}
+          key: opam-v2-${{ runner.os }}-${{ env.OCAML_COMPILER }}-${{ hashFiles('mlir-sem.opam', 'dune-project') }}
